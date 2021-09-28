@@ -1,6 +1,8 @@
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 public class ClientHandler extends Thread {
 
@@ -17,7 +19,8 @@ public class ClientHandler extends Thread {
 			// TODO Auto-generated constructor stub
 		}
 
-		public void run() {
+	
+	public void run() {
 
 			try {
 
@@ -36,4 +39,20 @@ public class ClientHandler extends Thread {
 				System.out.println("Connection with client# " + clientNumber + " closed");
 			}
 		}
+
+	/**
+	 * Affiche dans la console du serveur la commande du client: affiche
+	 * l'adresse,le port, l'heure et la date
+	 * @param command: La commande du client
+	 */
+	private  void printCommand(String command) {
+
+		System.out.println("\t["  // address et port du client
+				+ "//" + LocalDate.now() + " @ " + LocalTime.now().toString().split("\\.")[0] + "]: " + command);
+
 	}
+
+
+
+}
+
