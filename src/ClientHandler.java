@@ -47,12 +47,15 @@ public class ClientHandler extends Thread {
 	 */
 	private  void printCommand(String command) {
 
-		System.out.println("\t["  // address et port du client
+		System.out.println("\t[" +get_Adress_Port() // address et port du client
 				+ "//" + LocalDate.now() + " @ " + LocalTime.now().toString().split("\\.")[0] + "]: " + command);
 
 	}
 
-
+	private String get_Adress_Port() {
+		
+		return this.socket.getInetAddress().getHostAddress()+":"+this.socket.getPort();
+	}
 
 }
 
