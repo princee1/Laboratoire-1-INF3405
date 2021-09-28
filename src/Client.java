@@ -1,18 +1,17 @@
 import java.io.DataInputStream;
 import java.net.Socket;
 import java.util.Scanner;
+import java.util.StringTokenizer;
 
 
 public class Client {
 private static Socket socket;
+private static boolean quitter=true;
 	public static void main(String arg[]) throws Exception {
 	
-		Scanner scannerIn = new Scanner(System.in);
-		System.out.println("Adresse Ip avec le format 4 octets XXX.XXX.XX.XXX?");
-		String serverAddress = scannerIn.nextLine();
-		System.out.println("Port Ip?");
-		int port=scannerIn.nextInt();
 		
+		String serverAddress=Utilitaire.ipAdress_validation();
+		int port = Utilitaire.port_validation();
 		
 		//String serverAddress= "127.0.0.1";
 		//int port=5000;
@@ -25,7 +24,136 @@ private static Socket socket;
 		String helloMessageFromServer = in.readUTF();
 		System.out.println(helloMessageFromServer);
 		
+		
+		try {
+
+			do {
+				verifierCommand();
+			} while (quitter);
+
+		} catch (Exception e) {
+			// TODO: handle exception
+			System.out.println("\nFermeture brusque");
+
+		} finally {
+			// TODO deconnecter
+			System.out.println("Au revoir");
+		}
+		
+		
+		
 		socket.close();
 		
 	}
+	
+
+	/**
+	 * Transforme l'entrée du client en une commande que le serveur peut traiter.
+	 * @return une commande.
+	 */
+	public static String clientEntry_toCommand() {
+		System.out.print("Repertoire actuelle : "); // TODO affichier le répertoire actuelle
+		String command = new Scanner(System.in).nextLine().strip().toLowerCase();
+
+		StringTokenizer stringTokenizer = new StringTokenizer(command, " ", false);
+		int cpt = 0;
+		int count = stringTokenizer.countTokens();
+
+		String token = "";
+
+		while (stringTokenizer.hasMoreTokens() && cpt < count) {
+			token += stringTokenizer.nextToken() + Utilitaire.getCommandRegex();
+			cpt++;
+		}
+
+		return token;
+	}
+
+	
+	/**
+	 * Vérifie la commande du client. Dans le cas ou la commande est bonne, elle est
+	 * envoyé au serveur
+	 */
+	private static void verifierCommand() {
+
+		//String cd=new String(Utilitaire.getCommandCd());
+		
+		
+		
+		boolean erreur;
+		do {
+			erreur = false;
+			String command = clientEntry_toCommand();
+			String tab[] = command.split(Utilitaire.getCommandRegex());
+
+			try {
+				switch (tab[Utilitaire.getPosCommand()]) {
+//TODO inverser la logique de verification
+				case "cd":
+					if (tab.length != 2)
+						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "cd..":
+					if (tab.length != 1)
+						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "delete":
+					if (tab.length != 2)
+						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "download":
+					if (tab.length == 2 || tab.length == 3) {
+
+						if (tab.length == 3 && !tab[2].equals(Utilitaire.getCommandDlZip())) {
+
+							System.out.println("\tErreur\n\tOption zip doit etre : " + Utilitaire.getCommandDlZip());
+							erreur = true;
+						}
+					}
+
+					else
+						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "ls":
+					if (tab.length != 1)
+						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "mkdir":
+					if (tab.length != 2)
+						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "upload":
+					if (tab.length != 2)
+						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "-q":
+					quitter = false;
+					break;
+				default:
+					System.out.println("\tErreur pour la command: " + tab[0]);
+					erreur = true;
+					break;
+
+				}
+
+				if (!erreur) {
+					// TODO envoyer la commande
+					// ce que le serveur afficher apres la commande
+				//	printCommand(command);
+
+				}
+			} catch (ArrayIndexOutOfBoundsException e) {
+				System.out.println("\tErreur rien d'entrer: " + e.getMessage());
+				erreur = true;
+			} catch (WrongLgthCmdException e) {
+				System.out.println(e.getMessage());
+				erreur = true;
+			} catch (Exception e) {
+
+				System.out.println("\tErrer: " + e.getMessage());
+			}
+		} while (erreur);
+	}
+
+	
 }
