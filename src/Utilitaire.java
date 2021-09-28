@@ -32,7 +32,7 @@ public class Utilitaire {
 			serverPort = scannerIn.nextInt();
 		}
 		
-		scannerIn.close();
+	//	scannerIn.close();
 		return serverPort;
 	}
 	
@@ -79,9 +79,10 @@ boolean erreurAddressIp;
 		} while (erreurAddressIp);
 		
 	
-		scannerIn.close();
+	//	scannerIn.close();
 		return serverAddress;
 	}
+	
 	
 	
 	public static String getCommandCd() {
