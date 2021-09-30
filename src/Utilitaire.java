@@ -1,6 +1,6 @@
 import java.util.Scanner;
 
-public class Utilitaire {
+public final class Utilitaire {
 
 	/**
 	 * Commande
@@ -11,7 +11,7 @@ public class Utilitaire {
 	/**
 	 * Position des commandes
 	 */
-	private static final int POS_COMMAND = 0, POS_FILE_DIR = 1;
+	private static final int POS_COMMAND = 0, POS_FILE_DIR = 1,POS_CMD_OPTION=2;
 
 	private static final String COMMAND_DL_ZIP = "-z";
 	private static final String COMMAND_REGEX = " ";
@@ -20,7 +20,7 @@ public class Utilitaire {
 	
 	
 	
-	public static int port_validation() {
+	public static  int port_validation() {
 		Scanner scannerIn = new Scanner(System.in);
 		
 		int serverPort;
@@ -85,47 +85,51 @@ boolean erreurAddressIp;
 	
 	
 	
-	public static String getCommandCd() {
+	public static final String getCommandCd() {
 		return COMMAND_CD;
 	}
 
-	public static String getCommandCdDot() {
+	public static  final String getCommandCdDot() {
 		return COMMAND_CD_DOT;
 	}
 
-	public static int getPosFileDir() {
+	public static  final int getPosFile() {
 		return POS_FILE_DIR;
 	}
 
-	public static String getCommandDelete() {
+	public static  final String getCommandDelete() {
 		return COMMAND_DELETE;
 	}
 
-	public static String getCommandDownload() {
+	public static  final String getCommandDownload() {
 		return COMMAND_DOWNLOAD;
 	}
 
-	public static String getCommandUpload() {
+	public static  final String getCommandUpload() {
 		return COMMAND_UPLOAD;
 	}
 
-	public static String getCommandDlZip() {
+	public static  final String getCommandDlZip() {
 		return COMMAND_DL_ZIP;
 	}
 
-	public static String getCommandLs() {
+	public static  final String getCommandLs() {
 		return COMMAND_LS;
 	}
 
-	public static String getCommandMkdir() {
+	public static  final String getCommandMkdir() {
 		return COMMAND_MKDIR;
 	}
 
-	public static String getCommandRegex() {
+	public static   final String getCommandRegex() {
 		return COMMAND_REGEX;
 	}
 
-	public static int getPosCommand() {
+	public static   final int getPosCommand() {
 		return POS_COMMAND;
+	}
+
+     public static final int getPosCmdOption() {
+		return POS_CMD_OPTION;
 	}
 }

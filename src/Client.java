@@ -1,34 +1,39 @@
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
-
 public class Client {
-private static Socket socket;
-private static boolean quitter=true;
+	private static Socket socket;
+	private static boolean quitter = true;
+	private static DataOutputStream out;
+	private static DataInputStream in;
+
 	public static void main(String arg[]) throws Exception {
-	
-		
-		String serverAddress=Utilitaire.ipAdress_validation();
-		int port = Utilitaire.port_validation();
-		
-		//String serverAddress= "127.0.0.1";
-		//int port=5000;
-		
+
+		// String serverAddress = Utilitaire.ipAdress_validation();
+		// int port = Utilitaire.port_validation();
+
+		String serverAddress = "127.0.0.1";
+		int port = 5000;
+
 		socket = new Socket(serverAddress, port);
-		
+
 		System.out.format("The server is running on %s:%d%n", serverAddress, port);
-		DataInputStream in = new DataInputStream(socket.getInputStream());
-		
-		String helloMessageFromServer = in.readUTF();
-		System.out.println(helloMessageFromServer);
-		
-		
+
+		out = new DataOutputStream(socket.getOutputStream());
+		in = new DataInputStream(socket.getInputStream());
+		// DataInputStream in = new DataInputStream(socket.getInputStream());
+
+		// String helloMessageFromServer = in.readUTF();
+		// System.out.println(helloMessageFromServer);
+
 		try {
 
 			do {
-				verifierCommand();
+				verifier_envoie_Command();
 			} while (quitter);
 
 		} catch (Exception e) {
@@ -39,21 +44,20 @@ private static boolean quitter=true;
 			// TODO deconnecter
 			System.out.println("Au revoir");
 		}
-		
-		
-		
-		socket.close();
-		
-	}
-	
 
+		Client.socket.close();
+
+	}
+
+	
 	/**
 	 * Transforme l'entrée du client en une commande que le serveur peut traiter.
+	 * 
 	 * @return une commande.
 	 */
 	public static String clientEntry_toCommand() {
 		System.out.print("Repertoire actuelle : "); // TODO affichier le répertoire actuelle
-		String command = new Scanner(System.in).nextLine().strip().toLowerCase();
+		String command = new Scanner(System.in).nextLine().strip();
 
 		StringTokenizer stringTokenizer = new StringTokenizer(command, " ", false);
 		int cpt = 0;
@@ -62,33 +66,39 @@ private static boolean quitter=true;
 		String token = "";
 
 		while (stringTokenizer.hasMoreTokens() && cpt < count) {
-			token += stringTokenizer.nextToken() + Utilitaire.getCommandRegex();
+			// TODO Rendre la command et la cmd option lowerCase seulement !
+			if (cpt == Utilitaire.getPosFile())
+				token += stringTokenizer.nextToken() + Utilitaire.getCommandRegex();
+			else
+				token += stringTokenizer.nextToken().toLowerCase() + Utilitaire.getCommandRegex();
+
 			cpt++;
 		}
 
 		return token;
 	}
 
-	
 	/**
 	 * Vérifie la commande du client. Dans le cas ou la commande est bonne, elle est
 	 * envoyé au serveur
 	 */
-	private static void verifierCommand() {
+	private static void verifier_envoie_Command() {
 
-		//String cd=new String(Utilitaire.getCommandCd());
-		
-		
-		
+		// String cd=new String(Utilitaire.getCommandCd());
+
 		boolean erreur;
 		do {
 			erreur = false;
 			String command = clientEntry_toCommand();
 			String tab[] = command.split(Utilitaire.getCommandRegex());
 
+			// tab[Utilitaire.getPosCommand()]=
+			// tab[Utilitaire.getPosCommand()].toLowerCase();
+			// tab[Utilitaire.getPosCmdOption()]=tab[Utilitaire.getPosCmdOption()].toLowerCase();
+
 			try {
 				switch (tab[Utilitaire.getPosCommand()]) {
-//TODO inverser la logique de verification
+
 				case "cd":
 					if (tab.length != 2)
 						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
@@ -139,8 +149,9 @@ private static boolean quitter=true;
 				if (!erreur) {
 					// TODO envoyer la commande
 					// ce que le serveur afficher apres la commande
-				//	printCommand(command);
+					// printCommand(command);
 
+					out.writeUTF(command);
 				}
 			} catch (ArrayIndexOutOfBoundsException e) {
 				System.out.println("\tErreur rien d'entrer: " + e.getMessage());
@@ -148,9 +159,9 @@ private static boolean quitter=true;
 			} catch (WrongLgthCmdException e) {
 				System.out.println(e.getMessage());
 				erreur = true;
-			} catch (Exception e) {
-
-				System.out.println("\tErrer: " + e.getMessage());
+			} // catch (Exception e) {System.out.println("\tErrer: " + e.getMessage()); }
+			catch (IOException e) {
+				System.out.println("\tErreur: " + e.getMessage());
 			}
 		} while (erreur);
 	}
