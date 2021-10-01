@@ -13,11 +13,11 @@ public class Client {
 
 	public static void main(String arg[]) throws Exception {
 
-		// String serverAddress = Utilitaire.ipAdress_validation();
-		// int port = Utilitaire.port_validation();
+		 String serverAddress = Utilitaire.ipAdress_validation();
+		 int port = Utilitaire.port_validation();
 
-		String serverAddress = "127.0.0.1";
-		int port = 5000;
+		//String serverAddress = "127.0.0.1";
+		//int port = 5000;
 
 		socket = new Socket(serverAddress, port);
 
@@ -25,10 +25,8 @@ public class Client {
 
 		out = new DataOutputStream(socket.getOutputStream());
 		in = new DataInputStream(socket.getInputStream());
-		// DataInputStream in = new DataInputStream(socket.getInputStream());
-
-		// String helloMessageFromServer = in.readUTF();
-		// System.out.println(helloMessageFromServer);
+		
+		
 
 		try {
 
@@ -137,6 +135,7 @@ public class Client {
 						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "-q":
+					erreur =false;
 					quitter = false;
 					break;
 				default:
@@ -152,6 +151,7 @@ public class Client {
 					// printCommand(command);
 
 					out.writeUTF(command);
+					 System.out.println(in.readUTF());
 				}
 			} catch (ArrayIndexOutOfBoundsException e) {
 				System.out.println("\tErreur rien d'entrer: " + e.getMessage());

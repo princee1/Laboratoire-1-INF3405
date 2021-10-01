@@ -20,8 +20,8 @@ public class Server {
 		serverAddress = Utilitaire.ipAdress_validation();
 		serverPort = Utilitaire.port_validation();
 
-		// String serverAddress= "132.207.29.108";
-		// int serverPort=5005;
+		// serverAddress= "127.0.0.1";
+		// serverPort=5000;
 
 		listener = new ServerSocket();
 		listener.setReuseAddress(true);
