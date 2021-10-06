@@ -1,3 +1,4 @@
+import java.io.File;
 import java.util.Scanner;
 
 public final class Utilitaire {
@@ -21,6 +22,7 @@ public final class Utilitaire {
 	
 	
 	public static  int port_validation() {
+		
 		Scanner scannerIn = new Scanner(System.in);
 		
 		int serverPort;
