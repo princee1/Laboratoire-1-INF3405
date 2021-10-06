@@ -11,17 +11,19 @@ import java.util.Scanner;
 public class Server {
 
 	private static ServerSocket listener;
+	
+	
 
 	public static void main(String arg[]) throws Exception {
 		int clientNumber = 0;
 		int serverPort;
 		String serverAddress;
 
-		serverAddress = Utilitaire.ipAdress_validation();
-		serverPort = Utilitaire.port_validation();
+		//serverAddress = Utilitaire.ipAdress_validation();
+		//serverPort = Utilitaire.port_validation();
 
-		// serverAddress= "127.0.0.1";
-		// serverPort=5000;
+		 serverAddress= "127.0.0.1";
+		 serverPort=5000;
 
 		listener = new ServerSocket();
 		listener.setReuseAddress(true);
@@ -46,4 +48,7 @@ public class Server {
 
 	}
 
+	
+	
+	
 }

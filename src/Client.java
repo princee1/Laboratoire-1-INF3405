@@ -10,16 +10,20 @@ public class Client {
 	private static boolean quitter = true;
 	private static DataOutputStream out;
 	private static DataInputStream in;
+	
 
 	public static void main(String arg[]) throws Exception {
 
-		 String serverAddress = Utilitaire.ipAdress_validation();
-		 int port = Utilitaire.port_validation();
+		 //String serverAddress = Utilitaire.ipAdress_validation();
+		 //int port = Utilitaire.port_validation();
 
-		//String serverAddress = "127.0.0.1";
-		//int port = 5000;
+		String serverAddress = "127.0.0.1";
+		int port = 5000;
+		
 
 		socket = new Socket(serverAddress, port);
+		System.out.println(socket);
+		
 
 		System.out.format("The server is running on %s:%d%n", serverAddress, port);
 
@@ -151,6 +155,7 @@ public class Client {
 					// printCommand(command);
 
 					out.writeUTF(command);
+					
 					 System.out.println(in.readUTF());
 				}
 			} catch (ArrayIndexOutOfBoundsException e) {
