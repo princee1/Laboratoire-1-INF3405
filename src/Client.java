@@ -1,7 +1,9 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 
@@ -10,32 +12,19 @@ public class Client {
 	private static boolean quitter = true;
 	private static DataOutputStream out;
 	private static DataInputStream in;
-	
+	private static String dossierTemp = "RÃ©pertoire actuelle: ";
+	private static boolean erreur;
+	private static boolean stripPath = false;
+	private static boolean append = true;
 
 	public static void main(String arg[]) throws Exception {
 
-		 //String serverAddress = Utilitaire.ipAdress_validation();
-		 //int port = Utilitaire.port_validation();
-
-		String serverAddress = "127.0.0.1";
-		int port = 5000;
-		
-
-		socket = new Socket(serverAddress, port);
-		System.out.println(socket);
-		
-
-		System.out.format("The server is running on %s:%d%n", serverAddress, port);
-
-		out = new DataOutputStream(socket.getOutputStream());
-		in = new DataInputStream(socket.getInputStream());
-		
-		
+		connection();
 
 		try {
 
 			do {
-				verifier_envoie_Command();
+				verifier_Command();
 			} while (quitter);
 
 		} catch (Exception e) {
@@ -45,20 +34,20 @@ public class Client {
 		} finally {
 			// TODO deconnecter
 			System.out.println("Au revoir");
-		}
+			Client.socket.close();
 
-		Client.socket.close();
+		}
 
 	}
 
-	
 	/**
-	 * Transforme l'entrée du client en une commande que le serveur peut traiter.
+	 * Transforme l'entrï¿½e du client en une commande que le serveur peut traiter.
 	 * 
 	 * @return une commande.
 	 */
-	public static String clientEntry_toCommand() {
-		System.out.print("Repertoire actuelle : "); // TODO affichier le répertoire actuelle
+	private static String clientEntry_toCommand() {
+		// System.out.print("Repertoire actuelle : "); // TODO affichier le rï¿½pertoire
+		// actuelle
 		String command = new Scanner(System.in).nextLine().strip();
 
 		StringTokenizer stringTokenizer = new StringTokenizer(command, " ", false);
@@ -81,22 +70,19 @@ public class Client {
 	}
 
 	/**
-	 * Vérifie la commande du client. Dans le cas ou la commande est bonne, elle est
-	 * envoyé au serveur
+	 * Vï¿½rifie la commande du client. Dans le cas ou la commande est bonne, elle
+	 * est envoyï¿½ au serveur
 	 */
-	private static void verifier_envoie_Command() {
+	private static void verifier_Command() {
 
 		// String cd=new String(Utilitaire.getCommandCd());
 
-		boolean erreur;
 		do {
+
+			printCurrentDirectory();
 			erreur = false;
 			String command = clientEntry_toCommand();
 			String tab[] = command.split(Utilitaire.getCommandRegex());
-
-			// tab[Utilitaire.getPosCommand()]=
-			// tab[Utilitaire.getPosCommand()].toLowerCase();
-			// tab[Utilitaire.getPosCmdOption()]=tab[Utilitaire.getPosCmdOption()].toLowerCase();
 
 			try {
 				switch (tab[Utilitaire.getPosCommand()]) {
@@ -108,7 +94,8 @@ public class Client {
 				case "cd..":
 					if (tab.length != 1)
 						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
-					break;
+					else
+						break;
 				case "delete":
 					if (tab.length != 2)
 						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
@@ -117,13 +104,10 @@ public class Client {
 					if (tab.length == 2 || tab.length == 3) {
 
 						if (tab.length == 3 && !tab[2].equals(Utilitaire.getCommandDlZip())) {
-
 							System.out.println("\tErreur\n\tOption zip doit etre : " + Utilitaire.getCommandDlZip());
 							erreur = true;
 						}
-					}
-
-					else
+					} else
 						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "ls":
@@ -139,37 +123,96 @@ public class Client {
 						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "-q":
-					erreur =false;
+					erreur = false;
 					quitter = false;
 					break;
 				default:
 					System.out.println("\tErreur pour la command: " + tab[0]);
 					erreur = true;
 					break;
-
 				}
 
-				if (!erreur) {
-					// TODO envoyer la commande
-					// ce que le serveur afficher apres la commande
-					// printCommand(command);
+//				if (tab[Utilitaire.getPosCommand()].equals("cd")) {
+//					append = true;
+//				} else
+//					append = false;
+//				
+				envoie_reception(command);
 
-					out.writeUTF(command);
-					
-					 System.out.println(in.readUTF());
-				}
 			} catch (ArrayIndexOutOfBoundsException e) {
 				System.out.println("\tErreur rien d'entrer: " + e.getMessage());
 				erreur = true;
 			} catch (WrongLgthCmdException e) {
 				System.out.println(e.getMessage());
 				erreur = true;
-			} // catch (Exception e) {System.out.println("\tErrer: " + e.getMessage()); }
+			} catch (SocketException e) {
+				// TODO reset connection
+			}
+			// catch (Exception e) {System.out.println("\tErrer: " + e.getMessage()); }
 			catch (IOException e) {
+				System.out.println(e.getClass());
 				System.out.println("\tErreur: " + e.getMessage());
 			}
 		} while (erreur);
 	}
 
-	
+	private static void envoie_reception(String command) throws IOException {
+		if (!erreur) {
+			out.writeUTF(command); // envoie de commande
+
+			if (command.equals(Utilitaire.getCommandCdDot())) {
+				if (!in.readBoolean()) {
+					System.out.println(in.readUTF());
+					stripPath = false;
+				} else {
+					stripPath = true;
+				}
+			} else {
+				System.out.println(in.readUTF());
+			}
+		}
+	}
+
+	private static void printCurrentDirectory() {
+		try {
+			// System.out.println(stripPath);
+			if (!erreur) {
+				// TODO append le dossier afficheer
+				dossierTemp=in.readUTF();
+//				if (append)
+//					dossierTemp += in.readUTF() + ">";
+//				else {
+//					if (stripPath)
+//						Utilitaire.previous_dir(dossierTemp, ">");
+//				}
+			}
+			System.out.print(dossierTemp + " ");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.out.println("Erreur reception du dossier");
+		}
+	}
+
+	private static void connection() {
+		// String serverAddress = Utilitaire.ipAdress_validation();
+		// int port = Utilitaire.port_validation();
+
+		String serverAddress = "127.0.0.1";
+		int port = 5000;
+		try {
+			socket = new Socket(serverAddress, port);
+			// System.out.println(socket);
+
+			System.out.format("The server is running on %s:%d%n", serverAddress, port);
+			System.out.println("");
+
+			out = new DataOutputStream(socket.getOutputStream());
+			in = new DataInputStream(socket.getInputStream());
+		} catch (ConnectException e) {
+			// TODO: handle exception
+
+		} catch (IOException e) {
+		}
+	}
+
 }
