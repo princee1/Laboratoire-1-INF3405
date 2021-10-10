@@ -94,6 +94,7 @@ public class ClientHandler extends Thread {
 					break;
 			}
 		} catch (NullPointerException e) {
+			
 
 		} catch (FileNotFoundException e) {
 			out.writeUTF("\tError the file or the directory " + tabString[Utilitaire.getPosFile()] + ""

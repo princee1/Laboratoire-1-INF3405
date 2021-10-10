@@ -38,15 +38,19 @@ public class Client {
 			} while (quitter);
 
 		}
-		// catch (IOException e) {}
+		 catch (NullPointerException e) {
+			 
+		 }
 		catch (Exception e) {
 			// TODO: handle exception
+			System.out.println(e.getClass()+e.getMessage());
 			System.out.println("\nFermeture brusque");
 
 		} finally {
 			// TODO deconnecter
 			System.out.println("Au revoir");
-			Client.socket.close();
+			if (socket != null)
+				Client.socket.close();
 
 		}
 
@@ -91,6 +95,7 @@ public class Client {
 		do {
 			printCurrentDirectory();
 			erreur = false;
+			
 			String command = clientEntry_toCommand();
 			String tab[] = command.split(Utilitaire.getCommandRegex());
 
@@ -133,8 +138,10 @@ public class Client {
 						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "-q":
+					
 					erreur = false;
 					quitter = false;
+					
 					break;
 				default:
 					System.out.println("\tErreur pour la command: " + tab[0]);
@@ -142,7 +149,11 @@ public class Client {
 					break;
 				}
 
-				envoieCommand(command);
+				if (!erreur ) {
+					out.writeUTF(command); // envoie de commande
+					if(!tab[Utilitaire.getPosCommand()].equals(Utilitaire.getQuit()))
+					System.out.println(in.readUTF());
+				}
 
 			} catch (ArrayIndexOutOfBoundsException e) {
 				System.out.println("\tErreur rien d'entrer: " + e.getMessage());
@@ -150,20 +161,18 @@ public class Client {
 			} catch (CmdException e) {
 				System.out.println(e.getMessage());
 				erreur = true;
-			} catch (ConnectException e) {
-				System.out.println(e.getClass()+e.getMessage());
-				
 			} catch (SocketException e) {
 				// TODO reset connection
-				System.out.println(e.getClass()+e.getMessage());
-				
-				
-
+				System.out.println(e.getClass() + e.getMessage());
 			}
-			// catch (Exception e) {System.out.println("\tErrer: " + e.getMessage()); }
 			catch (IOException e) {
 				System.out.println(e.getClass());
 				System.out.println("\tErreur: " + e.getMessage());
+				
+			} catch (Exception e) {
+				
+				System.out.println("\tErrer intretable: " + e.getMessage());
+				quitter =true;
 			}
 		} while (erreur);
 	}
@@ -192,13 +201,6 @@ public class Client {
 		}, Date.from(Instant.now()), 2000);
 	}
 
-	private static void envoieCommand(String command) throws IOException {
-		if (!erreur) {
-			out.writeUTF(command); // envoie de commande
-			System.out.println(in.readUTF());
-		}
-	}
-
 	/**
 	 * Affiche le répertoire où se situe le client dans le serveur
 	 */
@@ -211,6 +213,7 @@ public class Client {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.out.println("Erreur reception du dossier");
+			//TODO quitter ou une reconnextion
 		}
 	}
 
@@ -221,17 +224,18 @@ public class Client {
 
 		try {
 			socket = new Socket(serverAddress, port);
-			//socket.setReuseAddress(true);
+			// socket.setReuseAddress(true);
 			// System.out.println(socket);
 			System.out.format("The server is running on %s:%d%n", serverAddress, port);
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
-			
+
 		} catch (ConnectException e) {
 			// TODO: handle exception
 			System.out.println("Connection Error");
-			
+// TODO quitter ou lancer une reconnecction
 		} catch (IOException e) {
+
 		}
 	}
 

@@ -7,7 +7,7 @@ public final class Utilitaire {
 	 * Commande
 	 */
 	private static final String COMMAND_CD = "cd", COMMAND_CD_DOT = "cd..", COMMAND_LS = "ls", COMMAND_MKDIR = "mkdir",
-			COMMAND_DELETE = "delete", COMMAND_UPLOAD = "upload", COMMAND_DOWNLOAD = "download";
+			COMMAND_DELETE = "delete", COMMAND_UPLOAD = "upload", COMMAND_DOWNLOAD = "download", QUIT = "-q";
 
 	/**
 	 * Position des commandes
@@ -108,4 +108,9 @@ public final class Utilitaire {
 	public static final int getPosCmdOption() {
 		return POS_CMD_OPTION;
 	}
+
+	public static String getQuit() {
+		return QUIT;
+	}
+
 }
