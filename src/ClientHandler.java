@@ -2,6 +2,7 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -15,21 +16,16 @@ public class ClientHandler extends Thread {
 	private int clientNumber;
 	private DataInputStream in;
 	private DataOutputStream out;
-	private String path="";
+	private String path = "";
 
 	public ClientHandler(Socket socket, int clientNumber) {
-
-		this.clientNumber = clientNumber;
-		this.socket = socket;
-	
-		//this.path = System.getProperty("user.dir");
-				System.out.println(path);
-				
-				
-		System.out.println("New connection with client#" + clientNumber + " at " + socket);
 		try {
+			this.clientNumber = clientNumber;
+			this.socket = socket;
+			this.path = Server.getRootPath_jar();
 			this.in = new DataInputStream(socket.getInputStream());
 			this.out = new DataOutputStream(socket.getOutputStream());
+			System.out.println("New connection with client#" + clientNumber + " at " + socket);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -46,73 +42,10 @@ public class ClientHandler extends Thread {
 			// out.writeUTF("Hello from server - you are clients#" + clientNumber);
 
 			while (true) { // condition d'arret
+				out.writeUTF(path.substring(Server.getIndexBegin()));
 				String command = in.readUTF();
 				printCommand(command);
-
-				String[] tabString = command.split(Utilitaire.getCommandRegex());
-
-				
-				switch (tabString[Utilitaire.getPosCommand()]) {
-				case "mkdir":
-										
-						// creer fichier
-
-						File directory = new File(path+"\\"+tabString[Utilitaire.getPosFile()]);
-
-						if (directory.mkdir()) {
-							out.writeUTF(tabString[Utilitaire.getPosFile()] + " is created!");
-
-							
-						} else {
-
-							out.writeUTF("Couldnt create: " + tabString[Utilitaire.getPosFile()] + "\nTry again");
-
-						}
-					break;
-					
-				case "cd":
-					// change la variable path
-					
-					if (path.equals(tabString[1])) {
-						out.writeUTF("You are alread in this directory");
-					
-					}else {
-						
-						if (new File(path+tabString[1]).isDirectory()) {
-							path += tabString[1] ;
-							out.writeUTF("You are now in the directory " + tabString[1]);
-						}else {
-							out.writeUTF(tabString[1] + " is not a folder");
-						}
-					
-					}
-						break;
-					
-				case "delete":
-					
-					File delete = new File(path+"\\"+tabString[1]);
-					if(delete.delete()) {
-						out.writeUTF("The folder "+tabString[1]+" has been deleted");
-					}else {
-						out.writeUTF("The folder "+tabString[1]+" couldn't be deleted");
-					}
-					break;
-					
-				case "ls":
-					break;
-					
-				case "upload":
-					break;
-					
-				case "download":
-					break;
-				
-				
-					
-				}
-				
-				
-				
+				gerer_command(command);
 
 				// out.writeUTF("\tCommmande recu! client#" + clientNumber);
 
@@ -131,6 +64,113 @@ public class ClientHandler extends Thread {
 		}
 	}
 
+	private void gerer_command(String command) throws IOException {
+		String[] tabString = command.split(Utilitaire.getCommandRegex());
+		try {
+			switch (tabString[Utilitaire.getPosCommand()]) {
+
+				case "mkdir":
+					// creer fichier
+					create_folder(tabString[Utilitaire.getPosFile()]);
+					break;
+				case "cd":
+					// change la variable path
+					changeDirectory(tabString[Utilitaire.getPosFile()]);
+					break;
+				case "cd..":
+					previous_directory();
+					break;
+				case "delete":
+					deleteFile(tabString[Utilitaire.getPosFile()]);
+					break;
+				case "ls":
+					out.writeUTF("\tPas encore implement�");
+					break;
+				case "upload":
+					out.writeUTF("\tPas encore implement�");
+					break;
+				case "download":
+					out.writeUTF("\tPas encore implement�");
+					break;
+			}
+		} catch (NullPointerException e) {
+
+		} catch (FileNotFoundException e) {
+			out.writeUTF("\tError the file or the directory " + tabString[Utilitaire.getPosFile()] + ""
+					+ "does not exist : " + e.getMessage());
+		} catch (IOException e) {
+			out.writeUTF("\t");
+
+		}
+
+	}
+
+	/**
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
+	private void deleteFile(String file) throws IOException {
+
+		File fileDelete = new File(path + "\\" + file);
+		if (fileDelete.isDirectory()) {
+			if (fileDelete.delete()) {
+				out.writeUTF("\tThe folder " + file + " and all the associated has been deleted");
+			} else {
+				out.writeUTF("\tThe folder " + file + " couldn't be deleted");
+			}
+		} else {
+			if (fileDelete.delete()) {
+				out.writeUTF("\tThe file " + file + " has been deleted");
+			} else {
+				out.writeUTF("\tThe file " + file + " couldn't be deleted");
+			}
+		}
+
+	}
+
+	/**
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
+	private void changeDirectory(String file) throws IOException {
+
+		if (new File(path).getName().equals(file)) {
+			out.writeUTF("\tYou are already in this directory");
+		} else {
+			if (new File(path + "\\" + file).isDirectory()) {
+				path += "\\" + file;
+				out.writeUTF("\tYou are now in the directory " + file);
+			} else {
+				out.writeUTF("\t" + file + " is not a folder");
+			}
+
+		}
+
+	}
+
+	/**
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
+	private void create_folder(String file) throws IOException {
+		File directory = new File(path + "\\" + file);
+		// TODO verifier si c un folder
+
+		// if (directory.isDirectory()) {
+		if (directory.mkdirs()) {
+			out.writeUTF("\t" + file + " is created!");
+		} else {
+			out.writeUTF("\tCouldnt create: " + file + " Try again");
+
+		}
+		// } else {
+		// out.writeUTF(file+" is not a directory");
+		// }
+	}
+
 	/**
 	 * Affiche dans la console du serveur la commande du client: affiche
 	 * l'adresse,le port, l'heure et la date
@@ -144,11 +184,38 @@ public class ClientHandler extends Thread {
 
 	}
 
+	/**
+	 * 
+	 */
+	private void previous_directory() throws IOException {
+		if (!this.path.equals(Server.getRootPath_jar())) {
+			for (int i = this.path.length() - 1; i >= 0; i--) {
+				if (this.path.substring(i - 1, i).equals("\\")) {
+					this.path = this.path.substring(0, i - 1);
+					break;
+				}
+			}
+			out.writeUTF("\tprevous directory...");
+		} else {
+			out.writeUTF("\tYou can't [...]"); // TODO trouver une phrase pour cette explication
+
+		}
+
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
 	private String get_Adress_Port() {
 
 		return this.socket.getInetAddress().getHostAddress() + ":" + this.socket.getPort();
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public Socket getSocket() {
 		return socket;
 	}

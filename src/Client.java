@@ -4,30 +4,42 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.sql.Date;
+import java.time.Instant;
 import java.util.Scanner;
 import java.util.StringTokenizer;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class Client {
 	private static Socket socket;
-	private static boolean quitter = true;
+	private static boolean quitter = true, erreur;
 	private static DataOutputStream out;
 	private static DataInputStream in;
-	private static String dossierTemp = "RÃ©pertoire actuelle: ";
-	private static boolean erreur;
-	private static boolean stripPath = false;
-	private static boolean append = true;
+	private static String dossierTemp = "Répertoire actuelle: ";
+
+	private static int port;
+	private static String serverAddress;
+	private static Thread mainThread;
 
 	public static void main(String arg[]) throws Exception {
+		// String serverAddress = Utilitaire.ipAdress_validation();
+		// int port = Utilitaire.port_validation();
 
+		serverAddress = "127.0.0.1";
+		port = 5000;
+		mainThread = Thread.currentThread();
 		connection();
 
 		try {
 
 			do {
-				verifier_Command();
+				verifier_enoie_Command();
 			} while (quitter);
 
-		} catch (Exception e) {
+		}
+		// catch (IOException e) {}
+		catch (Exception e) {
 			// TODO: handle exception
 			System.out.println("\nFermeture brusque");
 
@@ -41,7 +53,7 @@ public class Client {
 	}
 
 	/**
-	 * Transforme l'entrï¿½e du client en une commande que le serveur peut traiter.
+	 * Transforme l'entrée du client en une commande que le serveur peut traiter.
 	 * 
 	 * @return une commande.
 	 */
@@ -70,15 +82,13 @@ public class Client {
 	}
 
 	/**
-	 * Vï¿½rifie la commande du client. Dans le cas ou la commande est bonne, elle
-	 * est envoyï¿½ au serveur
+	 * Vérifie la commande du client. Dans le cas ou la commande est bonne, elle est
+	 * envoyï¿½ au serveur
+	 * 
+	 * @throws IOException
 	 */
-	private static void verifier_Command() {
-
-		// String cd=new String(Utilitaire.getCommandCd());
-
+	private static void verifier_enoie_Command() {
 		do {
-
 			printCurrentDirectory();
 			erreur = false;
 			String command = clientEntry_toCommand();
@@ -89,16 +99,16 @@ public class Client {
 
 				case "cd":
 					if (tab.length != 2)
-						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "cd..":
 					if (tab.length != 1)
-						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					else
 						break;
 				case "delete":
 					if (tab.length != 2)
-						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "download":
 					if (tab.length == 2 || tab.length == 3) {
@@ -108,19 +118,19 @@ public class Client {
 							erreur = true;
 						}
 					} else
-						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "ls":
 					if (tab.length != 1)
-						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "mkdir":
 					if (tab.length != 2)
-						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "upload":
 					if (tab.length != 2)
-						throw new WrongLgthCmdException(tab[Utilitaire.getPosCommand()]);
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "-q":
 					erreur = false;
@@ -132,21 +142,23 @@ public class Client {
 					break;
 				}
 
-//				if (tab[Utilitaire.getPosCommand()].equals("cd")) {
-//					append = true;
-//				} else
-//					append = false;
-//				
-				envoie_reception(command);
+				envoieCommand(command);
 
 			} catch (ArrayIndexOutOfBoundsException e) {
 				System.out.println("\tErreur rien d'entrer: " + e.getMessage());
 				erreur = true;
-			} catch (WrongLgthCmdException e) {
+			} catch (CmdException e) {
 				System.out.println(e.getMessage());
 				erreur = true;
+			} catch (ConnectException e) {
+				System.out.println(e.getClass()+e.getMessage());
+				
 			} catch (SocketException e) {
 				// TODO reset connection
+				System.out.println(e.getClass()+e.getMessage());
+				
+				
+
 			}
 			// catch (Exception e) {System.out.println("\tErrer: " + e.getMessage()); }
 			catch (IOException e) {
@@ -156,61 +168,69 @@ public class Client {
 		} while (erreur);
 	}
 
-	private static void envoie_reception(String command) throws IOException {
+	private static void reconnection(SocketException e) {
+		System.out.println("\tErreur de connection: " + e.getMessage());
+		System.out.println("\tReseting connection...\n");
+
+		Timer timer = new Timer();
+
+		timer.scheduleAtFixedRate(new TimerTask() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				Client.mainThread.suspend();
+				System.out.println("Retrying a connection with the server");
+				connection();
+
+				if (Client.socket.isConnected()) {
+					Client.mainThread.resume();
+					timer.cancel();
+
+				}
+			}
+		}, Date.from(Instant.now()), 2000);
+	}
+
+	private static void envoieCommand(String command) throws IOException {
 		if (!erreur) {
 			out.writeUTF(command); // envoie de commande
-
-			if (command.equals(Utilitaire.getCommandCdDot())) {
-				if (!in.readBoolean()) {
-					System.out.println(in.readUTF());
-					stripPath = false;
-				} else {
-					stripPath = true;
-				}
-			} else {
-				System.out.println(in.readUTF());
-			}
+			System.out.println(in.readUTF());
 		}
 	}
 
+	/**
+	 * Affiche le répertoire où se situe le client dans le serveur
+	 */
 	private static void printCurrentDirectory() {
 		try {
-			// System.out.println(stripPath);
 			if (!erreur) {
-				// TODO append le dossier afficheer
-				dossierTemp=in.readUTF();
-//				if (append)
-//					dossierTemp += in.readUTF() + ">";
-//				else {
-//					if (stripPath)
-//						Utilitaire.previous_dir(dossierTemp, ">");
-//				}
+				dossierTemp = in.readUTF();
 			}
-			System.out.print(dossierTemp + " ");
+			System.out.print(dossierTemp + ": ");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.out.println("Erreur reception du dossier");
 		}
 	}
 
+	/**
+	 * Permet de se connecter au server
+	 */
 	private static void connection() {
-		// String serverAddress = Utilitaire.ipAdress_validation();
-		// int port = Utilitaire.port_validation();
 
-		String serverAddress = "127.0.0.1";
-		int port = 5000;
 		try {
 			socket = new Socket(serverAddress, port);
+			//socket.setReuseAddress(true);
 			// System.out.println(socket);
-
 			System.out.format("The server is running on %s:%d%n", serverAddress, port);
-			System.out.println("");
-
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
+			
 		} catch (ConnectException e) {
 			// TODO: handle exception
-
+			System.out.println("Connection Error");
+			
 		} catch (IOException e) {
 		}
 	}

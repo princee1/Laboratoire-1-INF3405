@@ -12,19 +12,15 @@ public final class Utilitaire {
 	/**
 	 * Position des commandes
 	 */
-	private static final int POS_COMMAND = 0, POS_FILE_DIR = 1,POS_CMD_OPTION=2;
+	private static final int POS_COMMAND = 0, POS_FILE_DIR = 1, POS_CMD_OPTION = 2;
 
 	private static final String COMMAND_DL_ZIP = "-z";
 	private static final String COMMAND_REGEX = " ";
 
-	
-	
-	
-	
-	public static  int port_validation() {
-		
+	public static int port_validation() {
+
 		Scanner scannerIn = new Scanner(System.in);
-		
+
 		int serverPort;
 		System.out.println("Port Ip?");
 		serverPort = scannerIn.nextInt();
@@ -33,15 +29,15 @@ public final class Utilitaire {
 
 			serverPort = scannerIn.nextInt();
 		}
-		
-	//	scannerIn.close();
+
+		// scannerIn.close();
 		return serverPort;
 	}
-	
+
 	public static String ipAdress_validation() {
-		
-boolean erreurAddressIp;
-		
+
+		boolean erreurAddressIp;
+
 		Scanner scannerIn = new Scanner(System.in);
 
 		String serverAddress;
@@ -72,66 +68,44 @@ boolean erreurAddressIp;
 
 				}
 			} else {
-				
 
 				System.out.println("l'adresse IP doit contenir 4 octects");
 				erreurAddressIp = true;
 			}
 
 		} while (erreurAddressIp);
-		
-	
-	//	scannerIn.close();
+
+		// scannerIn.close();
 		return serverAddress;
 	}
-	
-	
-	
-	public static final String getCommandCd() {
-		return COMMAND_CD;
+
+	public static void previous_dir(String path, String regex) {
+
+		for (int i = path.length() - 1; i >= 0; i--) {
+			if (path.substring(i - 1, i).equals(regex)) {
+				path = path.substring(0, i - 1);
+				break;
+			}
+		}
 	}
 
-	public static  final String getCommandCdDot() {
-		return COMMAND_CD_DOT;
-	}
-
-	public static  final int getPosFile() {
-		return POS_FILE_DIR;
-	}
-
-	public static  final String getCommandDelete() {
-		return COMMAND_DELETE;
-	}
-
-	public static  final String getCommandDownload() {
-		return COMMAND_DOWNLOAD;
-	}
-
-	public static  final String getCommandUpload() {
-		return COMMAND_UPLOAD;
-	}
-
-	public static  final String getCommandDlZip() {
+	public static String getCommandDlZip() {
 		return COMMAND_DL_ZIP;
 	}
 
-	public static  final String getCommandLs() {
-		return COMMAND_LS;
+	public static final int getPosFile() {
+		return POS_FILE_DIR;
 	}
 
-	public static  final String getCommandMkdir() {
-		return COMMAND_MKDIR;
-	}
-
-	public static   final String getCommandRegex() {
+	public static final String getCommandRegex() {
 		return COMMAND_REGEX;
 	}
 
-	public static   final int getPosCommand() {
+	public static final int getPosCommand() {
 		return POS_COMMAND;
 	}
 
-     public static final int getPosCmdOption() {
+	public static final int getPosCmdOption() {
 		return POS_CMD_OPTION;
 	}
 }
