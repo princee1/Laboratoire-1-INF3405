@@ -11,9 +11,11 @@ import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.print.CancelablePrintJob;
+
 public class Client {
 	private static Socket socket;
-	private static boolean quitter = true, erreur;
+	private static boolean quitter = true, erreur, connected;
 	private static DataOutputStream out;
 	private static DataInputStream in;
 	private static String dossierTemp = "Répertoire actuelle: ";
@@ -136,10 +138,8 @@ public class Client {
 						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "-q":
-
 					erreur = false;
 					quitter = false;
-
 					break;
 				default:
 					System.out.println("\tErreur pour la command: " + tab[0]);
@@ -161,8 +161,11 @@ public class Client {
 				erreur = true;
 			} catch (SocketException e) {
 				// TODO reset connection
-				//System.out.println(e.getClass() + e.getMessage());
-				
+				connected = false;
+				connection();
+				reconnection(e.getMessage());
+				//System.out.println("Connection established!\n ");
+			//	erreur =false;
 			} catch (IOException e) {
 				System.out.println(e.getClass());
 				System.out.println("\tErreur: " + e.getMessage());
@@ -175,12 +178,16 @@ public class Client {
 		} while (erreur);
 	}
 
-	private static void reconnection(String e) {
-		System.out.println("\tErreur de connection: " + e);
+	/**
+	 * Permet de se reconnecter apres une erreur de connection au server
+	 * @param errorMessage: Message d'erreur de l'exception
+	 */
+	private static void reconnection(String errorMessage) {
+		System.out.println("\tErreur de connection: " + errorMessage);
 		System.out.println("\tReseting connection...\n");
 
 		Timer timer = new Timer();
-
+		
 		timer.scheduleAtFixedRate(new TimerTask() {
 
 			@Override
@@ -189,14 +196,17 @@ public class Client {
 				Client.mainThread.suspend();
 				System.out.println("Retrying a connection with the server");
 				connection();
-
-				if (Client.socket.isConnected()) {
+				if (Client.connected) {
 					Client.mainThread.resume();
-					timer.purge();
+					
+
+					Client.printCurrentDirectory();//pourquoi reappler la methode?
 					timer.cancel();
+					
 				}
 			}
-		}, Date.from(Instant.now()), 2000);
+		}, Date.from(Instant.now()), 3000);
+		
 	}
 
 	/**
@@ -207,9 +217,9 @@ public class Client {
 			if (!erreur) {
 				dossierTemp = in.readUTF();
 			}
-			System.out.print(dossierTemp + ": ");
+			System.out.print(dossierTemp + "> ");
 		} catch (SocketException e) {
-			
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.out.println("Erreur reception du dossier");
@@ -226,17 +236,20 @@ public class Client {
 			socket = new Socket(serverAddress, port);
 			// socket.setReuseAddress(true);
 			// System.out.println(socket);
+			System.out.println("Connection established!\n ");
+
 			System.out.format("The server is running on %s:%d%n", serverAddress, port);
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
-
+			connected = true;
 		} catch (ConnectException e) {
 			// TODO: handle exception
+			connected = false;
 			System.out.println("Connection Error");
 		} catch (IOException e) {
 
-		}catch(Exception e) {
-			
+		} catch (Exception e) {
+
 		}
 	}
 
