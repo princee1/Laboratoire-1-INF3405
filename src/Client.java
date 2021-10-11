@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
-import java.sql.Date;
 import java.time.Instant;
+import java.util.Date;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.Timer;
@@ -14,19 +14,24 @@ import java.util.TimerTask;
 import javax.print.CancelablePrintJob;
 
 public class Client {
+	/**
+	 * Variable de connection
+	 */
 	private static Socket socket;
-	private static boolean quitter = true, erreur, connected;
 	private static DataOutputStream out;
 	private static DataInputStream in;
-	private static String dossierTemp = "Répertoire actuelle: ";
-
 	private static int port;
 	private static String serverAddress;
+
+	private static String dossierTemp = "Répertoire actuelle: ";
+	private static boolean quitter = true, erreur, connected;
 	private static Thread mainThread;
+	private static final long period = 3000;
+	private static final long maxDelayReconnection = 1000 * 60 * 2;
 
 	public static void main(String arg[]) throws Exception {
-		// String serverAddress = Utilitaire.ipAdress_validation();
-		// int port = Utilitaire.port_validation();
+		// serverAddress = Utilitaire.ipAdress_validation();
+		// port = Utilitaire.port_validation();
 
 		serverAddress = "127.0.0.1";
 		port = 5000;
@@ -96,10 +101,13 @@ public class Client {
 			printCurrentDirectory();
 			erreur = false;
 
-			String command = clientEntry_toCommand();
-			String tab[] = command.split(Utilitaire.getCommandRegex());
-
 			try {
+				String command = clientEntry_toCommand();
+				if (command.equals(Utilitaire.getCommandError()))
+					throw new CmdException("cd..");
+
+				String tab[] = command.split(Utilitaire.getCommandRegex());
+
 				switch (tab[Utilitaire.getPosCommand()]) {
 
 				case "cd":
@@ -164,30 +172,28 @@ public class Client {
 				connected = false;
 				connection();
 				reconnection(e.getMessage());
-				//System.out.println("Connection established!\n ");
-			//	erreur =false;
+				// System.out.println("Connection established!\n ");
+				// erreur =false;
 			} catch (IOException e) {
 				System.out.println(e.getClass());
 				System.out.println("\tErreur: " + e.getMessage());
 
-			} catch (Exception e) {
-
-				System.out.println("\tErrer intretable: " + e.getMessage());
-				quitter = true;
-			}
+			} 
 		} while (erreur);
 	}
 
 	/**
 	 * Permet de se reconnecter apres une erreur de connection au server
+	 * 
 	 * @param errorMessage: Message d'erreur de l'exception
 	 */
 	private static void reconnection(String errorMessage) {
 		System.out.println("\tErreur de connection: " + errorMessage);
 		System.out.println("\tReseting connection...\n");
 
+		Date startReconnection = Date.from(Instant.now());
 		Timer timer = new Timer();
-		
+
 		timer.scheduleAtFixedRate(new TimerTask() {
 
 			@Override
@@ -198,15 +204,16 @@ public class Client {
 				connection();
 				if (Client.connected) {
 					Client.mainThread.resume();
-					
-
-					Client.printCurrentDirectory();//pourquoi reappler la methode?
+					Client.printCurrentDirectory();// TODO pourquoi reappler la methode?
 					timer.cancel();
-					
+				} else if ((Date.from(Instant.now()).getTime()
+						- startReconnection.getTime()) >= Client.maxDelayReconnection) {
+					System.out.println("Couldnt establish a connection");
+					System.exit(0);// TODO trouver une autre facon de quitter
 				}
 			}
-		}, Date.from(Instant.now()), 3000);
-		
+		}, Date.from(Instant.now()), Client.period);
+
 	}
 
 	/**
