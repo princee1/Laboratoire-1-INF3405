@@ -84,19 +84,22 @@ public class ClientHandler extends Thread {
 					deleteFile(tabString[Utilitaire.getPosFile()]);
 					break;
 				case "ls":
-					out.writeUTF("\tPas encore implement�");
-					break;
+					throw new UnsupportedOperationException("Unsupported operation");
+					//break;
 				case "upload":
-					out.writeUTF("\tPas encore implement�");
-					break;
+					throw new UnsupportedOperationException("Unsupported operation");
+					//break;
 				case "download":
-					out.writeUTF("\tPas encore implement�");
-					break;
+					throw new UnsupportedOperationException("Unsupported operation");
+					//break;
 			}
 		} catch (NullPointerException e) {
 			
 
-		} catch (FileNotFoundException e) {
+		}catch(UnsupportedOperationException e) {
+			out.writeUTF("\t"+e.getMessage());
+		} 
+		catch (FileNotFoundException e) {
 			out.writeUTF("\tError the file or the directory " + tabString[Utilitaire.getPosFile()] + ""
 					+ "does not exist : " + e.getMessage());
 		} catch (IOException e) {
