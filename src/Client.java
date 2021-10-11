@@ -37,13 +37,11 @@ public class Client {
 				verifier_enoie_Command();
 			} while (quitter);
 
-		}
-		 catch (NullPointerException e) {
-			 
-		 }
-		catch (Exception e) {
+		} catch (NullPointerException e) {
+			// si le socket n'est pas connecté
+		} catch (Exception e) {
 			// TODO: handle exception
-			System.out.println(e.getClass()+e.getMessage());
+			System.out.println(e.getClass() + e.getMessage());
 			System.out.println("\nFermeture brusque");
 
 		} finally {
@@ -95,7 +93,7 @@ public class Client {
 		do {
 			printCurrentDirectory();
 			erreur = false;
-			
+
 			String command = clientEntry_toCommand();
 			String tab[] = command.split(Utilitaire.getCommandRegex());
 
@@ -138,10 +136,10 @@ public class Client {
 						throw new CmdException(tab[Utilitaire.getPosCommand()]);
 					break;
 				case "-q":
-					
+
 					erreur = false;
 					quitter = false;
-					
+
 					break;
 				default:
 					System.out.println("\tErreur pour la command: " + tab[0]);
@@ -149,10 +147,10 @@ public class Client {
 					break;
 				}
 
-				if (!erreur ) {
+				if (!erreur) {
 					out.writeUTF(command); // envoie de commande
-					if(!tab[Utilitaire.getPosCommand()].equals(Utilitaire.getQuit()))
-					System.out.println(in.readUTF());
+					if (!tab[Utilitaire.getPosCommand()].equals(Utilitaire.getQuit()))
+						System.out.println(in.readUTF());
 				}
 
 			} catch (ArrayIndexOutOfBoundsException e) {
@@ -163,22 +161,22 @@ public class Client {
 				erreur = true;
 			} catch (SocketException e) {
 				// TODO reset connection
-				System.out.println(e.getClass() + e.getMessage());
-			}
-			catch (IOException e) {
+				//System.out.println(e.getClass() + e.getMessage());
+				
+			} catch (IOException e) {
 				System.out.println(e.getClass());
 				System.out.println("\tErreur: " + e.getMessage());
-				
+
 			} catch (Exception e) {
-				
+
 				System.out.println("\tErrer intretable: " + e.getMessage());
-				quitter =true;
+				quitter = true;
 			}
 		} while (erreur);
 	}
 
-	private static void reconnection(SocketException e) {
-		System.out.println("\tErreur de connection: " + e.getMessage());
+	private static void reconnection(String e) {
+		System.out.println("\tErreur de connection: " + e);
 		System.out.println("\tReseting connection...\n");
 
 		Timer timer = new Timer();
@@ -194,8 +192,8 @@ public class Client {
 
 				if (Client.socket.isConnected()) {
 					Client.mainThread.resume();
+					timer.purge();
 					timer.cancel();
-
 				}
 			}
 		}, Date.from(Instant.now()), 2000);
@@ -210,10 +208,12 @@ public class Client {
 				dossierTemp = in.readUTF();
 			}
 			System.out.print(dossierTemp + ": ");
+		} catch (SocketException e) {
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.out.println("Erreur reception du dossier");
-			//TODO quitter ou une reconnextion
+			// TODO quitter ou une reconnextion
 		}
 	}
 
@@ -233,9 +233,10 @@ public class Client {
 		} catch (ConnectException e) {
 			// TODO: handle exception
 			System.out.println("Connection Error");
-// TODO quitter ou lancer une reconnecction
 		} catch (IOException e) {
 
+		}catch(Exception e) {
+			
 		}
 	}
 
