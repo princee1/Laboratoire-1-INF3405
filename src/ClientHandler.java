@@ -78,7 +78,7 @@ public class ClientHandler extends Thread {
 					changeDirectory(tabString[Utilitaire.getPosFile()]);
 					break;
 				case "cd..":
-					previous_directory();
+					parent_directory();
 					break;
 				case "delete":
 					deleteFile(tabString[Utilitaire.getPosFile()]);
@@ -191,17 +191,12 @@ public class ClientHandler extends Thread {
 	/**
 	 * 
 	 */
-	private void previous_directory() throws IOException {
+	private void parent_directory() throws IOException {
 		if (!this.path.equals(Server.getRootPath_jar())) {
-			for (int i = this.path.length() - 1; i >= 0; i--) {
-				if (this.path.substring(i - 1, i).equals("\\")) {
-					this.path = this.path.substring(0, i - 1);
-					break;
-				}
-			}
-			out.writeUTF("\tprevous directory...");
+			path= new File(path).getParentFile().getAbsolutePath();
+			out.writeUTF("\tparent directory...");
 		} else {
-			out.writeUTF("\tYou can't [...]"); // TODO trouver une phrase pour cette explication
+			out.writeUTF("\tYou can't go back to a parent directory"); // TODO trouver une phrase pour cette explication
 
 		}
 
