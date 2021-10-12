@@ -2,8 +2,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Scanner;
@@ -29,6 +31,9 @@ public class Client {
 	private static final long period = 3000;
 	private static final long maxDelayReconnection = 1000 * 60 * 2;
 
+	private static Timer timer;
+	private static Timer timerDeconnectio;
+	
 	public static void main(String arg[]) throws Exception {
 		// serverAddress = Utilitaire.ipAdress_validation();
 		// port = Utilitaire.port_validation();
@@ -36,7 +41,11 @@ public class Client {
 		serverAddress = "127.0.0.1";
 		port = 5000;
 		mainThread = Thread.currentThread();
-		connection();
+	//	socket = new Socket();
+		// safeDeconnection();
+		
+		 connection();
+//		verfierConnection();
 
 		try {
 
@@ -46,6 +55,8 @@ public class Client {
 
 		} catch (NullPointerException e) {
 			// si le socket n'est pas connecté
+			System.out.println(e.getMessage());
+			
 		} catch (Exception e) {
 			// TODO: handle exception
 			System.out.println(e.getClass() + e.getMessage());
@@ -57,6 +68,66 @@ public class Client {
 			if (socket != null)
 				Client.socket.close();
 
+		}
+	}
+
+	private static void safeDeconnection() {
+		timerDeconnectio = new Timer(true);
+		timerDeconnectio.scheduleAtFixedRate(new TimerTask() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+
+				if (!mainThread.isAlive()) {
+					try {
+						Client.socket.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+
+					}
+
+				}
+
+			}
+		}, Date.from(Instant.now()), 1000);
+	}
+
+	private static void verfierConnection() {
+		Client.timer = new Timer();
+		Client.timer.schedule(new TimerTask() {
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+
+				if (Client.socket.isClosed() || !Client.socket.isConnected()) {
+					// reconnection("Server deconnected");
+
+					
+					timer.cancel();
+				}
+
+			}
+		}, Date.from(Instant.now()), 1000);
+		
+	}
+
+	private static void deconnection() {
+		System.out.println("deconnection...\n");
+		System.out.println("Au revoir");
+		if (socket != null) {
+			try {
+				Client.socket.close();
+			} catch (SocketException e) {
+				// TODO: handle exception
+				System.out.println("Couldnt close the socket " + e.getMessage());
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				System.out.println(e.getMessage());
+			}
+		} else {
+			System.exit(0);
 		}
 
 	}
@@ -178,7 +249,7 @@ public class Client {
 				System.out.println(e.getClass());
 				System.out.println("\tErreur: " + e.getMessage());
 
-			} 
+			}
 		} while (erreur);
 	}
 
@@ -200,7 +271,7 @@ public class Client {
 			public void run() {
 				// TODO Auto-generated method stub
 				Client.mainThread.suspend();
-				System.out.println("Retrying a connection with the server");
+				System.out.println("Retrying a new connection with the server");
 				connection();
 				if (Client.connected) {
 					Client.mainThread.resume();
@@ -241,6 +312,7 @@ public class Client {
 
 		try {
 			socket = new Socket(serverAddress, port);
+			// socket.connect(new InetSocketAddress(serverAddress, port), 0);
 			// socket.setReuseAddress(true);
 			// System.out.println(socket);
 			System.out.println("Connection established!\n ");

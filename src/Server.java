@@ -17,7 +17,7 @@ public class Server {
 	private static final String ROOTPATH_JAR = System.getProperty("user.dir") + "\\" + "Test Data";
 	private static final int INDEX_BEGIN = (System.getProperty("user.dir") + "\\").length();
 	private static HashMap<Integer, ClientHandler> mapClient = new HashMap<Integer, ClientHandler>();
-	private static final int MAX_CLIENT = 100;
+	private static final int MAX_CLIENT = 1;
 
 	public static void main(String arg[]) throws Exception {
 
@@ -54,6 +54,9 @@ public class Server {
 			InetAddress serverIP = InetAddress.getByName(serverAddress);
 
 			listener.bind(new InetSocketAddress(serverIP, serverPort));
+			
+			//listener.bind(new InetSocketAddress(serverIP, serverPort),MAX_CLIENT);
+			//listener.setSoTimeout(10000);
 			System.out.format("This server is running on %s:%d%n", serverAddress, serverPort);
 		} catch (UnknownHostException e) {
 
