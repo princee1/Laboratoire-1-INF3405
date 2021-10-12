@@ -156,7 +156,8 @@ public class Client {
 			} catch (SocketException e) {
 				// TODO reset connection
 				System.out.println(e.getClass()+e.getMessage());
-				
+				erreur=false;
+				quitter=false;
 				
 
 			}
