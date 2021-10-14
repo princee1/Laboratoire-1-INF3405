@@ -86,16 +86,19 @@ public class ClientHandler extends Thread {
 				deleteFile(tabString[Utilitaire.getPosFile()]);
 				break;
 			case "ls":
-				// out.writeUTF("\tPas encore implementï¿½");
 				displayFiles();
 				break;
 			case "upload":
-				// out.writeUTF("\tPas encore implementï¿½");
-				receiveFile(tabString[Utilitaire.getPosFile()]);
+				Utilitaire.receiveFile(in, path+"\\"+ new File(tabString[Utilitaire.getPosFile()]).getName());
+					out.writeUTF("\tFichier recu!");
+			//	else 
+				//	out.writeUTF("\tErreur");
 				break;
 			case "download":
-				sendFile(path+"\\"+new File(tabString[Utilitaire.getPosFile()]).getName());
-				out.writeUTF("Fichier envoyé");
+				 Utilitaire.sendFile(out, path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName());
+					out.writeUTF("\tFichier envoyé");
+				//else 
+					//out.writeUTF("\tErreur");
 				break;
 			}
 		} catch (NullPointerException e) {
@@ -157,30 +160,6 @@ public class ClientHandler extends Thread {
 
 	/**
 	 * 
-	 * @param fileName
-	 * @throws IOException
-	 */
-	private void receiveFile(String fileName) throws IOException {
-		String name = new File(fileName).getName();
-		DataOutputStream fileOut = new DataOutputStream(new FileOutputStream(path + "\\" + name));
-
-		long length = in.readLong();
-		System.out.println(length);
-		byte[] bytes = new byte[4096];
-		int count = 0;
-		while (length > 0 && (count = in.read(bytes,0,(int)Math.min(bytes.length,length))) !=-1) {
-			System.out.print(bytes);
-			fileOut.write(bytes, 0, count);
-			fileOut.flush();
-			length -= count;
-		}
-		
-		fileOut.close();
-		out.writeUTF("Fichier recu!");
-	}
-
-	/**
-	 * 
 	 * @param file
 	 * @throws IOException
 	 */
@@ -207,47 +186,11 @@ public class ClientHandler extends Thread {
 	 * @param command: La commande du client
 	 */
 	private void printCommand(String command) {
-
 		System.out.println("\tClient #" + this.clientNumber + "[" + get_Adress_Port() // address et port du client
 				+ "//" + LocalDate.now() + " @ " + LocalTime.now().toString().split("\\.")[0] + "]: " + command);
 
 	}
 
-	/**
-	 * 
-	 * @param file
-	 * @throws IOException
-	 */
-	private  void sendFile(String file) throws IOException {
-
-		// creates a file object to upload it
-		File fileToUpload = new File(file);
-
-		// Get the size of the file
-		long length = fileToUpload.length();
-		byte[] bytes = new byte[4096];
-
-		// System.out.println(bytes.length);
-		// We have privates attributes for streams
-		DataInputStream fileIn = new DataInputStream(new FileInputStream(fileToUpload));
-
-		// send length
-		out.writeLong(length);
-		out.flush();
-		// copy a stream
-		int count=0;
-		while ( (count = fileIn.read(bytes)) != -1) {
-			out.write(bytes, 0, count);
-			out.flush();
-		//	length -= count;
-			System.out.println(length);
-		}
-
-		// close stream
-		fileIn.close();
-	}
-
-	
 	/**
 	 * 
 	 */
@@ -267,6 +210,11 @@ public class ClientHandler extends Thread {
 
 	}
 
+	
+	/**
+	 * 
+	 * @throws IOException
+	 */
 	private void displayFiles() throws IOException {
 
 		String envoie = "";

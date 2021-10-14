@@ -2,6 +2,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Scanner;
@@ -11,8 +12,7 @@ public final class Utilitaire {
 	/**
 	 * Commande
 	 */
-	private static final String COMMAND_CD = "cd", COMMAND_CD_DOT = "cd..", COMMAND_LS = "ls", COMMAND_MKDIR = "mkdir",
-			COMMAND_DELETE = "delete", COMMAND_UPLOAD = "upload", COMMAND_DOWNLOAD = "download";
+	private static final String COMMAND_CD_DOT = "cd..", COMMAND_UPLOAD = "upload", COMMAND_DOWNLOAD = "download";
 
 	/**
 	 * Position des commandes
@@ -21,30 +21,50 @@ public final class Utilitaire {
 
 	private static final String COMMAND_DL_ZIP = "-z";
 	private static final String COMMAND_REGEX = " ";
-	
-	
+
 	/**
 	 * 
 	 * @param fileName
 	 * @throws IOException
 	 */
-	public static void receiveFile(DataInputStream in,DataOutputStream out,String fileName) throws IOException {
-		//String name = new File(fileName).getName();
-		DataOutputStream fileOut = new DataOutputStream(new FileOutputStream(fileName));
+	public static void receiveFile(DataInputStream in, String fileName) throws IOException {
+		// String name = new File(fileName).getName();
 
-		long length = in.readLong();
-		System.out.println(length);
-		byte[] bytes = new byte[4096];
-		int count = 0;
-		while (length > 0 && (count = in.read(bytes,0,(int)Math.min(bytes.length,length))) !=-1) {
-			System.out.print(bytes);
-			fileOut.write(bytes, 0, count);
-			fileOut.flush();
-			length -= count;
-		}
+		boolean received = false;
+		DataOutputStream fileOut = null;
+		//try {
+			fileOut = new DataOutputStream(new FileOutputStream(fileName));
+
+			long length = in.readLong();
+
+			byte[] bytes = new byte[4096];
+			int count = 0;
+
+			while (length > 0 && (count = in.read(bytes, 0, (int) Math.min(bytes.length, length))) != -1) {
+				fileOut.write(bytes, 0, count);
+				fileOut.flush();
+				length -= count;
+			}
+			fileOut.close();
+			received = true;
 		
-		fileOut.close();
-		out.writeUTF("Fichier recu!");
+		/**
+		 * } catch (FileNotFoundException e) {
+			System.out.println(e.getMessage());
+		} catch (SecurityException e) {
+			System.out.println(e.getMessage());
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		} finally {
+			try {
+				fileOut.close();
+			} catch (NullPointerException e) {
+			}
+		}
+
+		 */
+		//return received;
+
 	}
 
 	/**
@@ -54,6 +74,10 @@ public final class Utilitaire {
 	 */
 	public static void sendFile(DataOutputStream out, String file) throws IOException {
 
+		boolean sent = false;
+		DataInputStream fileIn = null;
+		// try {
+		
 		// creates a file object to upload it
 		File fileToUpload = new File(file);
 
@@ -61,28 +85,37 @@ public final class Utilitaire {
 		long length = fileToUpload.length();
 		byte[] bytes = new byte[4096];
 
-		// System.out.println(bytes.length);
 		// We have privates attributes for streams
-		DataInputStream fileIn = new DataInputStream(new FileInputStream(fileToUpload));
+		fileIn = new DataInputStream(new FileInputStream(fileToUpload));
 
 		// send length
 		out.writeLong(length);
 		out.flush();
 		// copy a stream
-		int count=0;
-		while ( (count = fileIn.read(bytes)) != -1) {
+		int count = 0;
+		while ((count = fileIn.read(bytes)) != -1) {
 			out.write(bytes, 0, count);
 			out.flush();
-		//	length -= count;
-			System.out.println(length);
-		}
+		} // close stream
 
-		// close stream
-		fileIn.close();
+		sent = true;
+
+		/**
+		 * } catch (FileNotFoundException e) { System.out.println(e.getMessage()); }
+		 * catch (SecurityException e) { System.out.println(e.getMessage()); } catch
+		 * (IOException e) { System.out.println(e.getMessage()); } finally { try {
+		 * fileIn.close(); } catch (NullPointerException e) { }
+		 * 
+		 * }
+		 */
+		//return sent;
+
 	}
 
-	
-	
+	/**
+	 * 
+	 * @return
+	 */
 	public static int port_validation() {
 
 		Scanner scannerIn = new Scanner(System.in);
@@ -100,6 +133,10 @@ public final class Utilitaire {
 		return serverPort;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public static String ipAdress_validation() {
 
 		boolean erreurAddressIp;
@@ -174,4 +211,13 @@ public final class Utilitaire {
 	public static final int getPosCmdOption() {
 		return POS_CMD_OPTION;
 	}
+
+	public static String getCommandDownload() {
+		return COMMAND_DOWNLOAD;
+	}
+
+	public static String getCommandUpload() {
+		return COMMAND_UPLOAD;
+	}
+
 }
