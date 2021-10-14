@@ -2,7 +2,9 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -69,29 +71,32 @@ public class ClientHandler extends Thread {
 		try {
 			switch (tabString[Utilitaire.getPosCommand()]) {
 
-				case "mkdir":
-					// creer fichier
-					create_folder(tabString[Utilitaire.getPosFile()]);
-					break;
-				case "cd":
-					// change la variable path
-					changeDirectory(tabString[Utilitaire.getPosFile()]);
-					break;
-				case "cd..":
-					previous_directory();
-					break;
-				case "delete":
-					deleteFile(tabString[Utilitaire.getPosFile()]);
-					break;
-				case "ls":
-					out.writeUTF("\tPas encore implementï¿½");
-					break;
-				case "upload":
-					out.writeUTF("\tPas encore implementï¿½");
-					break;
-				case "download":
-					out.writeUTF("\tPas encore implementï¿½");
-					break;
+			case "mkdir":
+				// creer fichier
+				create_folder(tabString[Utilitaire.getPosFile()]);
+				break;
+			case "cd":
+				// change la variable path
+				changeDirectory(tabString[Utilitaire.getPosFile()]);
+				break;
+			case "cd..":
+				previous_directory();
+				break;
+			case "delete":
+				deleteFile(tabString[Utilitaire.getPosFile()]);
+				break;
+			case "ls":
+				// out.writeUTF("\tPas encore implementï¿½");
+				displayFiles();
+				break;
+			case "upload":
+				// out.writeUTF("\tPas encore implementï¿½");
+				receiveFile(tabString[Utilitaire.getPosFile()]);
+				break;
+			case "download":
+				sendFile(path+"\\"+new File(tabString[Utilitaire.getPosFile()]).getName());
+				out.writeUTF("Fichier envoyé");
+				break;
 			}
 		} catch (NullPointerException e) {
 
@@ -152,6 +157,30 @@ public class ClientHandler extends Thread {
 
 	/**
 	 * 
+	 * @param fileName
+	 * @throws IOException
+	 */
+	private void receiveFile(String fileName) throws IOException {
+		String name = new File(fileName).getName();
+		DataOutputStream fileOut = new DataOutputStream(new FileOutputStream(path + "\\" + name));
+
+		long length = in.readLong();
+		System.out.println(length);
+		byte[] bytes = new byte[4096];
+		int count = 0;
+		while (length > 0 && (count = in.read(bytes,0,(int)Math.min(bytes.length,length))) !=-1) {
+			System.out.print(bytes);
+			fileOut.write(bytes, 0, count);
+			fileOut.flush();
+			length -= count;
+		}
+		
+		fileOut.close();
+		out.writeUTF("Fichier recu!");
+	}
+
+	/**
+	 * 
 	 * @param file
 	 * @throws IOException
 	 */
@@ -186,6 +215,41 @@ public class ClientHandler extends Thread {
 
 	/**
 	 * 
+	 * @param file
+	 * @throws IOException
+	 */
+	private  void sendFile(String file) throws IOException {
+
+		// creates a file object to upload it
+		File fileToUpload = new File(file);
+
+		// Get the size of the file
+		long length = fileToUpload.length();
+		byte[] bytes = new byte[4096];
+
+		// System.out.println(bytes.length);
+		// We have privates attributes for streams
+		DataInputStream fileIn = new DataInputStream(new FileInputStream(fileToUpload));
+
+		// send length
+		out.writeLong(length);
+		out.flush();
+		// copy a stream
+		int count=0;
+		while ( (count = fileIn.read(bytes)) != -1) {
+			out.write(bytes, 0, count);
+			out.flush();
+		//	length -= count;
+			System.out.println(length);
+		}
+
+		// close stream
+		fileIn.close();
+	}
+
+	
+	/**
+	 * 
 	 */
 	private void previous_directory() throws IOException {
 		if (!this.path.equals(Server.getRootPath_jar())) {
@@ -201,6 +265,23 @@ public class ClientHandler extends Thread {
 
 		}
 
+	}
+
+	private void displayFiles() throws IOException {
+
+		String envoie = "";
+		// creates a file object containing current directory
+		File directory = new File(this.path);
+
+		// returns an array of all files
+		String[] fileList = directory.list();
+
+		// prints out files
+		for (String file : fileList) {
+			envoie += file + "\n";
+			// System.out.println(file);
+		}
+		out.writeUTF(envoie);
 	}
 
 	/**
