@@ -49,12 +49,9 @@ public class ClientHandler extends Thread {
 				printCommand(command);
 				gerer_command(command);
 
-				// out.writeUTF("\tCommmande recu! client#" + clientNumber);
-
 			} // execution de demande
 
 		} catch (IOException e) {
-
 			System.out.println("Error handling client#" + clientNumber);
 		} finally {
 			try {
@@ -89,22 +86,28 @@ public class ClientHandler extends Thread {
 				displayFiles();
 				break;
 			case "upload":
-				Utilitaire.receiveFile(in, path+"\\"+ new File(tabString[Utilitaire.getPosFile()]).getName());
-					out.writeUTF("\tFichier recu!");
-			//	else 
-				//	out.writeUTF("\tErreur");
+				Utilitaire.receiveFile(in, path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName());
+				out.writeUTF("\tFichier recu!");
+				// else
+				// out.writeUTF("\tErreur");
 				break;
 			case "download":
-				 Utilitaire.sendFile(out, path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName());
-					out.writeUTF("\tFichier envoyé");
-				//else 
-					//out.writeUTF("\tErreur");
+				String fileName = path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName();
+				if ( !new File(fileName).isFile()) {
+					out.writeBoolean(false);
+					throw new FileNotFoundException();
+				} else
+				out.writeBoolean(true);
+				Utilitaire.sendFile(out, fileName);
+				out.writeUTF("\tFichier envoyé");
+				// else
+				// out.writeUTF("\tErreur");
 				break;
 			}
 		} catch (NullPointerException e) {
 
 		} catch (FileNotFoundException e) {
-			out.writeUTF("\tError the file or the directory " + tabString[Utilitaire.getPosFile()] + ""
+			out.writeUTF("\tError the file or the directory " + tabString[Utilitaire.getPosFile()] + " "
 					+ "does not exist : " + e.getMessage());
 		} catch (IOException e) {
 			out.writeUTF("\t");
@@ -210,7 +213,6 @@ public class ClientHandler extends Thread {
 
 	}
 
-	
 	/**
 	 * 
 	 * @throws IOException

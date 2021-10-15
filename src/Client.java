@@ -2,11 +2,13 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.file.FileAlreadyExistsException;
 import java.sql.Date;
 import java.time.Instant;
 import java.util.Scanner;
@@ -116,13 +118,18 @@ public class Client {
 					break;
 				case "download":
 					if (tab.length == 2 || tab.length == 3) {
-
+						if (new File(currDirectory + "\\" + tab[Utilitaire.getPosFile()]).exists()) {
+							throw new FileAlreadyExistsException(tab[Utilitaire.getPosFile()],
+									tab[Utilitaire.getPosFile()],
+									"The file entered already exist in the current directory\n\tThe file would've been overwritten...");
+						}
 						if (tab.length == 3 && !tab[2].equals(Utilitaire.getCommandDlZip())) {
 							System.out.println("\tErreur\n\tOption zip doit etre : " + Utilitaire.getCommandDlZip());
 							erreur = true;
 						}
 					} else
 						throw new CmdException(tab[Utilitaire.getPosCommand()]);
+
 					break;
 				case "ls":
 					if (tab.length != 1)
@@ -135,6 +142,9 @@ public class Client {
 				case "upload":
 					if (tab.length != 2)
 						throw new CmdException(tab[Utilitaire.getPosCommand()]);
+					else if (!new File(tab[Utilitaire.getPosFile()]).isFile()) {
+						throw new FileNotFoundException("Erreur: File not found");
+					}
 					break;
 				case "-q":
 					erreur = false;
@@ -155,17 +165,19 @@ public class Client {
 				System.out.println(e.getMessage());
 				erreur = true;
 			} catch (ConnectException e) {
-				System.out.println(e.getClass() + e.getMessage());
-
+				System.out.println("\t" + e.getMessage());
 			} catch (SocketException e) {
 				// TODO reset connection
-				System.out.println(e.getClass() + e.getMessage());
+				System.out.println("\t" + e.getMessage());
 				erreur = false;
 				quitter = false;
-
-			}
-			// catch (Exception e) {System.out.println("\tErrer: " + e.getMessage()); }
-			catch (IOException e) {
+			} catch (FileNotFoundException e) {
+				System.out.println("\t" + e.getMessage());
+				erreur = true;
+			} catch (FileAlreadyExistsException e) {
+				System.out.println("\t" + e.getMessage());
+				erreur = true;
+			} catch (IOException e) {
 				System.out.println(e.getClass());
 				System.out.println("\tErreur: " + e.getMessage());
 			}
@@ -200,10 +212,11 @@ public class Client {
 		if (!erreur) {
 
 			out.writeUTF(command); // envoie de commande
-			if (command.split(Utilitaire.getCommandRegex())[0].equals("upload")) {
+			if (command.split(Utilitaire.getCommandRegex())[Utilitaire.getPosCommand()].equals("upload")) {
 				Utilitaire.sendFile(out, command.split(Utilitaire.getCommandRegex())[1]);
-			} else if (command.split(Utilitaire.getCommandRegex())[0].equals("download")) {
-				Utilitaire.receiveFile(in, currDirectory + "\\" + command.split(Utilitaire.getCommandRegex())[1]);
+			} else if (command.split(Utilitaire.getCommandRegex())[Utilitaire.getPosCommand()].equals("download")) {
+				if (in.readBoolean())
+					Utilitaire.receiveFile(in, currDirectory + "\\" + command.split(Utilitaire.getCommandRegex())[1]);
 			}
 			System.out.println(in.readUTF());
 		}
