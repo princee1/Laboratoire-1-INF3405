@@ -2,7 +2,9 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Files;
@@ -47,12 +49,9 @@ public class ClientHandler extends Thread {
 				printCommand(command);
 				gerer_command(command);
 
-				// out.writeUTF("\tCommmande recu! client#" + clientNumber);
-
 			} // execution de demande
 
 		} catch (IOException e) {
-
 			System.out.println("Error handling client#" + clientNumber);
 		} finally {
 			try {
@@ -69,38 +68,46 @@ public class ClientHandler extends Thread {
 		try {
 			switch (tabString[Utilitaire.getPosCommand()]) {
 
-				case "mkdir":
-					// creer fichier
-					create_folder(tabString[Utilitaire.getPosFile()]);
-					break;
-				case "cd":
-					// change la variable path
-					changeDirectory(tabString[Utilitaire.getPosFile()]);
-					break;
-				case "cd..":
-					parent_directory();
-					break;
-				case "delete":
-					deleteFile(tabString[Utilitaire.getPosFile()]);
-					break;
-				case "ls":
-					throw new UnsupportedOperationException("Unsupported operation");
-					//break;
-				case "upload":
-					throw new UnsupportedOperationException("Unsupported operation");
-					//break;
-				case "download":
-					throw new UnsupportedOperationException("Unsupported operation");
-					//break;
+			case "mkdir":
+				// creer fichier
+				create_folder(tabString[Utilitaire.getPosFile()]);
+				break;
+			case "cd":
+				// change la variable path
+				changeDirectory(tabString[Utilitaire.getPosFile()]);
+				break;
+			case "cd..":
+				parent_directory();
+				break;
+			case "delete":
+				deleteFile(tabString[Utilitaire.getPosFile()]);
+				break;
+			case "ls":
+				displayFiles();
+				break;
+			case "upload":
+				Utilitaire.receiveFile(in, path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName());
+				out.writeUTF("\tFichier recu!");
+				// else
+				// out.writeUTF("\tErreur");
+				break;
+			case "download":
+				String fileName = path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName();
+				if ( !new File(fileName).isFile()) {
+					out.writeBoolean(false);
+					throw new FileNotFoundException("File not found");
+				} else
+				out.writeBoolean(true);
+				Utilitaire.sendFile(out, fileName);
+				out.writeUTF("\tFichier envoyé");
+				// else
+				// out.writeUTF("\tErreur");
+				break;
 			}
 		} catch (NullPointerException e) {
-			
 
-		}catch(UnsupportedOperationException e) {
-			out.writeUTF("\t"+e.getMessage());
-		} 
-		catch (FileNotFoundException e) {
-			out.writeUTF("\tError the file or the directory " + tabString[Utilitaire.getPosFile()] + ""
+		} catch (FileNotFoundException e) {
+			out.writeUTF("\tError the file or the directory " + tabString[Utilitaire.getPosFile()] + " "
 					+ "does not exist : " + e.getMessage());
 		} catch (IOException e) {
 			out.writeUTF("\t");
@@ -182,7 +189,6 @@ public class ClientHandler extends Thread {
 	 * @param command: La commande du client
 	 */
 	private void printCommand(String command) {
-
 		System.out.println("\tClient #" + this.clientNumber + "[" + get_Adress_Port() // address et port du client
 				+ "//" + LocalDate.now() + " @ " + LocalTime.now().toString().split("\\.")[0] + "]: " + command);
 
@@ -196,10 +202,31 @@ public class ClientHandler extends Thread {
 			path= new File(path).getParentFile().getAbsolutePath();
 			out.writeUTF("\tparent directory...");
 		} else {
-			out.writeUTF("\tYou can't go back to a parent directory"); // TODO trouver une phrase pour cette explication
+			out.writeUTF("\tYou can't go back to a parent directory"); 
 
 		}
 
+	}
+
+	/**
+	 * 
+	 * @throws IOException
+	 */
+	private void displayFiles() throws IOException {
+
+		String envoie = "";
+		// creates a file object containing current directory
+		File directory = new File(this.path);
+
+		// returns an array of all files
+		String[] fileList = directory.list();
+
+		// prints out files
+		for (String file : fileList) {
+			envoie += file + "\n";
+			// System.out.println(file);
+		}
+		out.writeUTF(envoie);
 	}
 
 	/**

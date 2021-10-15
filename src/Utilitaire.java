@@ -1,4 +1,10 @@
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Scanner;
 
 public final class Utilitaire {
@@ -6,20 +12,106 @@ public final class Utilitaire {
 	/**
 	 * Commande
 	 */
-	private static final String COMMAND_CD = "cd", COMMAND_CD_DOT = "cd..", COMMAND_LS = "ls", COMMAND_MKDIR = "mkdir",
-			COMMAND_DELETE = "delete", COMMAND_UPLOAD = "upload", COMMAND_DOWNLOAD = "download", QUIT = "-q";
+	private static final String COMMAND_CD_DOT = "cd..", COMMAND_UPLOAD = "upload", COMMAND_DOWNLOAD = "download";
 
 	/**
 	 * Position des commandes
 	 */
 	private static final int POS_COMMAND = 0, POS_FILE_DIR = 1, POS_CMD_OPTION = 2;
 
-	private static final String COMMAND_ERROR="cd .. ";
-	
+	private static final String COMMAND_ERROR = "cd .. ";
+
 	private static final String COMMAND_DL_ZIP = "-z";
 	private static final String COMMAND_REGEX = " ";
 
-	
+	/**
+	 * 
+	 * @param fileName
+	 * @throws IOException
+	 */
+	public static void receiveFile(DataInputStream in, String fileName) throws IOException {
+		// String name = new File(fileName).getName();
+
+		boolean received = false;
+		DataOutputStream fileOut = null;
+		// try {
+		fileOut = new DataOutputStream(new FileOutputStream(fileName));
+
+		long length = in.readLong();
+
+		byte[] bytes = new byte[4096];
+		int count = 0;
+
+		while (length > 0 && (count = in.read(bytes, 0, (int) Math.min(bytes.length, length))) != -1) {
+			fileOut.write(bytes, 0, count);
+			fileOut.flush();
+			length -= count;
+		}
+		fileOut.close();
+		received = true;
+
+		/**
+		 * } catch (FileNotFoundException e) { System.out.println(e.getMessage()); }
+		 * catch (SecurityException e) { System.out.println(e.getMessage()); } catch
+		 * (IOException e) { System.out.println(e.getMessage()); } finally { try {
+		 * fileOut.close(); } catch (NullPointerException e) { } }
+		 * 
+		 */
+		// return received;
+
+	}
+
+	/**
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
+	public static void sendFile(DataOutputStream out, String file) throws IOException {
+
+		boolean sent = false;
+		DataInputStream fileIn = null;
+		// try {
+
+		// creates a file object to upload it
+		File fileToUpload = new File(file);
+
+		// Get the size of the file
+		long length = fileToUpload.length();
+		byte[] bytes = new byte[4096];
+
+		// We have privates attributes for streams
+		fileIn = new DataInputStream(new FileInputStream(fileToUpload));
+
+		// send length
+		out.writeLong(length);
+		out.flush();
+		// copy a stream
+		int count = 0;
+		while ((count = fileIn.read(bytes)) != -1) {
+			out.write(bytes, 0, count);
+			out.flush();
+		}
+
+		// close stream
+		fileIn.close();
+		sent = true;
+
+		/**
+		 * } catch (FileNotFoundException e) { System.out.println(e.getMessage()); }
+		 * catch (SecurityException e) { System.out.println(e.getMessage()); } catch
+		 * (IOException e) { System.out.println(e.getMessage()); } finally { try {
+		 * fileIn.close(); } catch (NullPointerException e) { }
+		 * 
+		 * }
+		 */
+		// return sent;
+
+	}
+
+	/**
+	 * 
+	 * @return
+	 */
 	public static int port_validation() {
 
 		Scanner scannerIn = new Scanner(System.in);
@@ -37,6 +129,10 @@ public final class Utilitaire {
 		return serverPort;
 	}
 
+	/**
+	 * 
+	 * @return
+	 */
 	public static String ipAdress_validation() {
 
 		boolean erreurAddressIp;
@@ -92,14 +188,16 @@ public final class Utilitaire {
 		}
 	}
 
-	public static void readFile() {}
-	
-	public static void writeFile() {}
-	
+	public static void readFile() {
+	}
+
+	public static void writeFile() {
+	}
+
 	public static String getCommandError() {
 		return COMMAND_ERROR;
 	}
-	
+
 	public static String getCommandDlZip() {
 		return COMMAND_DL_ZIP;
 	}
@@ -120,9 +218,12 @@ public final class Utilitaire {
 		return POS_CMD_OPTION;
 	}
 
-	public static String getQuit() {
-		return QUIT;
+	public static String getCommandDownload() {
+		return COMMAND_DOWNLOAD;
 	}
 
-	
+	public static String getCommandUpload() {
+		return COMMAND_UPLOAD;
+	}
+
 }

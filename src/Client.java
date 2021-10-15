@@ -1,19 +1,20 @@
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.nio.file.FileAlreadyExistsException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import javax.print.CancelablePrintJob;
 
 public class Client {
 	/**
@@ -22,18 +23,19 @@ public class Client {
 	private static Socket socket;
 	private static DataOutputStream out;
 	private static DataInputStream in;
+	private static String dossierTemp = "Rï¿½pertoire actuelle: ";
+	private static String currDirectory = System.getProperty("user.dir");
+
 	private static int port;
 	private static String serverAddress;
 
-	private static String dossierTemp = "Répertoire actuelle: ";
 	private static boolean quitter = true, erreur, connected;
 	private static Thread mainThread;
 	private static final long period = 3000;
 	private static final long maxDelayReconnection = 1000 * 60 * 2;
 
-	private static Timer timer;
 	private static Timer timerDeconnection;
-	
+
 	public static void main(String arg[]) throws Exception {
 		// serverAddress = Utilitaire.ipAdress_validation();
 		// port = Utilitaire.port_validation();
@@ -41,11 +43,11 @@ public class Client {
 		serverAddress = "127.0.0.1";
 		port = 5000;
 		mainThread = Thread.currentThread();
-	//	socket = new Socket();
+		//socket = new Socket();
 		// safeDeconnection();
-		
-		 connection();
-//		verfierConnection();
+
+		connection();
+		// verfierConnection();
 
 		try {
 
@@ -54,23 +56,22 @@ public class Client {
 			} while (quitter);
 
 		} catch (NullPointerException e) {
-			// si le socket n'est pas connecté
-			System.out.println(e.getMessage());
-			
+			// si le socket n'est pas connectï¿½
+
 		} catch (Exception e) {
 			// TODO: handle exception
 			System.out.println(e.getClass() + e.getMessage());
 			System.out.println("\nFermeture brusque");
 
 		} finally {
-			// TODO deconnecter
-			System.out.println("Au revoir");
-			if (socket != null)
-				Client.socket.close();
-
+			// TODO: deconnecter
+			deconnection();
 		}
 	}
 
+	/**
+	 * 
+	 */
 	private static void safeDeconnection() {
 		timerDeconnection = new Timer(true);
 		timerDeconnection.scheduleAtFixedRate(new TimerTask() {
@@ -93,28 +94,30 @@ public class Client {
 		}, Date.from(Instant.now()), 1000);
 	}
 
-	
+	/**
+	 * 
+	 */
 	private static void deconnection() {
 		System.out.println("deconnection...\n");
-		System.out.println("Au revoir");
-		if (socket != null) {
-			try {
-				Client.socket.close();
-			} catch (SocketException e) {
-				// TODO: handle exception
-				System.out.println("Couldnt close the socket " + e.getMessage());
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				System.out.println(e.getMessage());
-			}
-		} else {
+		try {
+			Client.socket.close();
+		} catch (NullPointerException e) {
+			System.out.println("Already deconnected... : " + e.getMessage());
+		} catch (SocketException e) {
+			// TODO: handle exception
+			System.out.println("Couldnt close the socket " + e.getMessage());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.out.println(e.getMessage());
+		} finally {
+			System.out.println("Au revoir");
 			System.exit(0);
 		}
 
 	}
 
 	/**
-	 * Transforme l'entrée du client en une commande que le serveur peut traiter.
+	 * Transforme l'entrï¿½e du client en une commande que le serveur peut traiter.
 	 * 
 	 * @return une commande.
 	 */
@@ -143,7 +146,7 @@ public class Client {
 	}
 
 	/**
-	 * Vérifie la commande du client. Dans le cas ou la commande est bonne, elle est
+	 * Vï¿½rifie la commande du client. Dans le cas ou la commande est bonne, elle est
 	 * envoyï¿½ au serveur
 	 * 
 	 * @throws IOException
@@ -162,56 +165,60 @@ public class Client {
 
 				switch (tab[Utilitaire.getPosCommand()]) {
 
-				case "cd":
-					if (tab.length != 2)
-						throw new CmdException(tab[Utilitaire.getPosCommand()]);
-					break;
-				case "cd..":
-					if (tab.length != 1)
-						throw new CmdException(tab[Utilitaire.getPosCommand()]);
-					else
+					case "cd":
+						if (tab.length != 2)
+							throw new CmdException(tab[Utilitaire.getPosCommand()]);
 						break;
-				case "delete":
-					if (tab.length != 2)
-						throw new CmdException(tab[Utilitaire.getPosCommand()]);
-					break;
-				case "download":
-					if (tab.length == 2 || tab.length == 3) {
-
-						if (tab.length == 3 && !tab[2].equals(Utilitaire.getCommandDlZip())) {
-							System.out.println("\tErreur\n\tOption zip doit etre : " + Utilitaire.getCommandDlZip());
-							erreur = true;
+					case "cd..":
+						if (tab.length != 1)
+							throw new CmdException(tab[Utilitaire.getPosCommand()]);
+						else
+							break;
+					case "delete":
+						if (tab.length != 2)
+							throw new CmdException(tab[Utilitaire.getPosCommand()]);
+						break;
+					case "download":
+						if (tab.length == 2 || tab.length == 3) {
+							if (new File(currDirectory + "\\" + tab[Utilitaire.getPosFile()]).exists()) {
+								throw new FileAlreadyExistsException(tab[Utilitaire.getPosFile()],
+										tab[Utilitaire.getPosFile()],
+										"The file entered already exist in the current directory\n\tThe file would've been overwritten...");
+							}
+							if (tab.length == 3 && !tab[2].equals(Utilitaire.getCommandDlZip())) {
+								System.out
+										.println("\tErreur\n\tOption zip doit etre : " + Utilitaire.getCommandDlZip());
+								erreur = true;
+							}
+						} else
+							throw new CmdException(tab[Utilitaire.getPosCommand()]);
+						break;
+					case "ls":
+						if (tab.length != 1)
+							throw new CmdException(tab[Utilitaire.getPosCommand()]);
+						break;
+					case "mkdir":
+						if (tab.length != 2)
+							throw new CmdException(tab[Utilitaire.getPosCommand()]);
+						break;
+					case "upload":
+						if (tab.length != 2)
+							throw new CmdException(tab[Utilitaire.getPosCommand()]);
+						else if (!new File(tab[Utilitaire.getPosFile()]).isFile()) {
+							throw new FileNotFoundException("Erreur: File not found");
 						}
-					} else
-						throw new CmdException(tab[Utilitaire.getPosCommand()]);
-					break;
-				case "ls":
-					if (tab.length != 1)
-						throw new CmdException(tab[Utilitaire.getPosCommand()]);
-					break;
-				case "mkdir":
-					if (tab.length != 2)
-						throw new CmdException(tab[Utilitaire.getPosCommand()]);
-					break;
-				case "upload":
-					if (tab.length != 2)
-						throw new CmdException(tab[Utilitaire.getPosCommand()]);
-					break;
-				case "-q":
-					erreur = false;
-					quitter = false;
-					break;
-				default:
-					System.out.println("\tErreur pour la command: " + tab[0]);
-					erreur = true;
-					break;
+						break;
+					case "-q":
+						erreur = false;
+						quitter = false;
+						break;
+					default:
+						System.out.println("\tErreur pour la command: " + tab[Utilitaire.getPosCommand()]);
+						erreur = true;
+						break;
 				}
 
-				if (!erreur) {
-					out.writeUTF(command); // envoie de commande
-					if (!tab[Utilitaire.getPosCommand()].equals(Utilitaire.getQuit()))
-						System.out.println(in.readUTF());
-				}
+				envoieCommand(command);
 
 			} catch (ArrayIndexOutOfBoundsException e) {
 				System.out.println("\tErreur rien d'entrer: " + e.getMessage());
@@ -219,13 +226,22 @@ public class Client {
 			} catch (CmdException e) {
 				System.out.println(e.getMessage());
 				erreur = true;
+			} catch (ConnectException e) {
+				connected = false;
+				System.out.println("\t" + e.getMessage());
 			} catch (SocketException e) {
 				// TODO reset connection
+				// System.out.println("\t" + e.getMessage());
 				connected = false;
-				connection();
 				reconnection(e.getMessage());
-				// System.out.println("Connection established!\n ");
-				// erreur =false;
+				// erreur = false;
+				// quitter = false;
+			} catch (FileNotFoundException e) {
+				System.out.println("\t" + e.getMessage());
+				erreur = true;
+			} catch (FileAlreadyExistsException e) {
+				System.out.println("\t" + e.getMessage());
+				erreur = true;
 			} catch (IOException e) {
 				System.out.println(e.getClass());
 				System.out.println("\tErreur: " + e.getMessage());
@@ -261,15 +277,44 @@ public class Client {
 				} else if ((Date.from(Instant.now()).getTime()
 						- startReconnection.getTime()) >= Client.maxDelayReconnection) {
 					System.out.println("Couldnt establish a connection");
-					System.exit(0);// TODO trouver une autre facon de quitter
+					deconnection();
+					// System.exit(0);// TODO trouver une autre facon de quitter
 				}
 			}
 		}, Date.from(Instant.now()), Client.period);
-
 	}
 
 	/**
-	 * Affiche le répertoire où se situe le client dans le serveur
+	 * 
+	 * @param command
+	 * @throws IOException
+	 */
+	private static void envoieCommand(String command) throws IOException {
+		if (!erreur) {
+
+			out.writeUTF(command); // envoie de commande
+			try {
+
+				if (command.split(Utilitaire.getCommandRegex())[Utilitaire.getPosCommand()].equals("upload")) {
+					Utilitaire.sendFile(out, command.split(Utilitaire.getCommandRegex())[1]);
+				} else if (command.split(Utilitaire.getCommandRegex())[Utilitaire.getPosCommand()].equals("download")) {
+					if (in.readBoolean())
+						Utilitaire.receiveFile(in,
+								currDirectory + "\\" + command.split(Utilitaire.getCommandRegex())[1]);
+				}
+				if(quitter)
+					System.out.println(in.readUTF());
+			} catch (SocketException e) {
+				// TODO: handle exception
+				System.out.println(e.getMessage());
+				deconnection();
+			}
+
+		}
+	}
+
+	/**
+	 * Affiche le rï¿½pertoire oï¿½ se situe le client dans le serveur
 	 */
 	private static void printCurrentDirectory() {
 		try {
@@ -292,8 +337,8 @@ public class Client {
 	private static void connection() {
 
 		try {
-			socket = new Socket(serverAddress, port);
-			// socket.connect(new InetSocketAddress(serverAddress, port), 0);
+			 socket = new Socket(serverAddress, port);
+			//socket.connect(new InetSocketAddress(serverAddress, port), 0);
 			// socket.setReuseAddress(true);
 			// System.out.println(socket);
 			System.out.println("Connection established!\n ");
