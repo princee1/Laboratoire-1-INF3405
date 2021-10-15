@@ -11,6 +11,7 @@ import java.net.SocketTimeoutException;
 import java.nio.file.FileAlreadyExistsException;
 import java.time.Instant;
 import java.util.Date;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.Timer;
@@ -43,7 +44,7 @@ public class Client {
 		serverAddress = "127.0.0.1";
 		port = 5000;
 		mainThread = Thread.currentThread();
-		//socket = new Socket();
+		// socket = new Socket();
 		// safeDeconnection();
 
 		connection();
@@ -60,7 +61,7 @@ public class Client {
 
 		} catch (Exception e) {
 			// TODO: handle exception
-			System.out.println(e.getClass() + e.getMessage());
+			System.out.println("Erreur intrétable: " + e.getMessage());
 			System.out.println("\nFermeture brusque");
 
 		} finally {
@@ -117,7 +118,7 @@ public class Client {
 	}
 
 	/**
-	 * Transforme l'entrï¿½e du client en une commande que le serveur peut traiter.
+	 * Transforme l'entrée du client en une commande que le serveur peut traiter.
 	 * 
 	 * @return une commande.
 	 */
@@ -146,8 +147,8 @@ public class Client {
 	}
 
 	/**
-	 * Vï¿½rifie la commande du client. Dans le cas ou la commande est bonne, elle est
-	 * envoyï¿½ au serveur
+	 * Vérifie la commande du client. Dans le cas ou la commande est bonne, elle
+	 * est envoyé au serveur
 	 * 
 	 * @throws IOException
 	 */
@@ -155,7 +156,6 @@ public class Client {
 		do {
 			printCurrentDirectory();
 			erreur = false;
-
 			try {
 				String command = clientEntry_toCommand();
 				if (command.equals(Utilitaire.getCommandError()))
@@ -165,57 +165,56 @@ public class Client {
 
 				switch (tab[Utilitaire.getPosCommand()]) {
 
-					case "cd":
-						if (tab.length != 2)
-							throw new CmdException(tab[Utilitaire.getPosCommand()]);
+				case "cd":
+					if (tab.length != 2)
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "cd..":
+					if (tab.length != 1)
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
+					else
 						break;
-					case "cd..":
-						if (tab.length != 1)
-							throw new CmdException(tab[Utilitaire.getPosCommand()]);
-						else
-							break;
-					case "delete":
-						if (tab.length != 2)
-							throw new CmdException(tab[Utilitaire.getPosCommand()]);
-						break;
-					case "download":
-						if (tab.length == 2 || tab.length == 3) {
-							if (new File(currDirectory + "\\" + tab[Utilitaire.getPosFile()]).exists()) {
-								throw new FileAlreadyExistsException(tab[Utilitaire.getPosFile()],
-										tab[Utilitaire.getPosFile()],
-										"The file entered already exist in the current directory\n\tThe file would've been overwritten...");
-							}
-							if (tab.length == 3 && !tab[2].equals(Utilitaire.getCommandDlZip())) {
-								System.out
-										.println("\tErreur\n\tOption zip doit etre : " + Utilitaire.getCommandDlZip());
-								erreur = true;
-							}
-						} else
-							throw new CmdException(tab[Utilitaire.getPosCommand()]);
-						break;
-					case "ls":
-						if (tab.length != 1)
-							throw new CmdException(tab[Utilitaire.getPosCommand()]);
-						break;
-					case "mkdir":
-						if (tab.length != 2)
-							throw new CmdException(tab[Utilitaire.getPosCommand()]);
-						break;
-					case "upload":
-						if (tab.length != 2)
-							throw new CmdException(tab[Utilitaire.getPosCommand()]);
-						else if (!new File(tab[Utilitaire.getPosFile()]).isFile()) {
-							throw new FileNotFoundException("Erreur: File not found");
+				case "delete":
+					if (tab.length != 2)
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "download":
+					if (tab.length == 2 || tab.length == 3) {
+						if (new File(currDirectory + "\\" + tab[Utilitaire.getPosFile()]).exists()) {
+							throw new FileAlreadyExistsException(tab[Utilitaire.getPosFile()],
+									tab[Utilitaire.getPosFile()],
+									"The file entered already exist in the current directory\n\tThe file would've been overwritten...");
 						}
-						break;
-					case "-q":
-						erreur = false;
-						quitter = false;
-						break;
-					default:
-						System.out.println("\tErreur pour la command: " + tab[Utilitaire.getPosCommand()]);
-						erreur = true;
-						break;
+						if (tab.length == 3 && !tab[2].equals(Utilitaire.getCommandDlZip())) {
+							System.out.println("\tErreur\n\tOption zip doit etre : " + Utilitaire.getCommandDlZip());
+							erreur = true;
+						}
+					} else
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "ls":
+					if (tab.length != 1)
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "mkdir":
+					if (tab.length != 2)
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
+					break;
+				case "upload":
+					if (tab.length != 2)
+						throw new CmdException(tab[Utilitaire.getPosCommand()]);
+					else if (!new File(tab[Utilitaire.getPosFile()]).isFile()) {
+						throw new FileNotFoundException("Erreur: File not found");
+					}
+					break;
+				case "-q":
+					erreur = false;
+					quitter = false;
+					break;
+				default:
+					System.out.println("\tErreur pour la command: " + tab[Utilitaire.getPosCommand()]);
+					erreur = true;
+					break;
 				}
 
 				envoieCommand(command);
@@ -234,18 +233,19 @@ public class Client {
 				// System.out.println("\t" + e.getMessage());
 				connected = false;
 				reconnection(e.getMessage());
-				// erreur = false;
-				// quitter = false;
 			} catch (FileNotFoundException e) {
 				System.out.println("\t" + e.getMessage());
 				erreur = true;
 			} catch (FileAlreadyExistsException e) {
 				System.out.println("\t" + e.getMessage());
 				erreur = true;
-			} catch (IOException e) {
-				System.out.println(e.getClass());
+			} catch (SecurityException e) {
 				System.out.println("\tErreur: " + e.getMessage());
-
+				 erreur=true;
+			} catch (IOException e) {
+				System.out.println("\tErreur: " + e.getMessage());
+				erreur = false;
+				quitter = false;
 			}
 		} while (erreur);
 	}
@@ -302,12 +302,14 @@ public class Client {
 						Utilitaire.receiveFile(in,
 								currDirectory + "\\" + command.split(Utilitaire.getCommandRegex())[1]);
 				}
-				if(quitter)
+				if (quitter)
 					System.out.println(in.readUTF());
 			} catch (SocketException e) {
 				// TODO: handle exception
 				System.out.println(e.getMessage());
-				deconnection();
+				deconnection();// TODO: déconnecter ou quitter la boucle
+			}catch(SecurityException e) {
+				deconnection();// TODO: déconnecter ou quitter la boucle
 			}
 
 		}
@@ -337,8 +339,8 @@ public class Client {
 	private static void connection() {
 
 		try {
-			 socket = new Socket(serverAddress, port);
-			//socket.connect(new InetSocketAddress(serverAddress, port), 0);
+			socket = new Socket(serverAddress, port);
+			// socket.connect(new InetSocketAddress(serverAddress, port), 0);
 			// socket.setReuseAddress(true);
 			// System.out.println(socket);
 			System.out.println("Connection established!\n ");
@@ -352,9 +354,8 @@ public class Client {
 			connected = false;
 			System.out.println("Connection Error");
 		} catch (IOException e) {
-
-		} catch (Exception e) {
-
+			System.out.println("I/O error: " + e.getMessage());
+			deconnection();
 		}
 	}
 

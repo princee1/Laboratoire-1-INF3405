@@ -11,6 +11,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
+import javax.net.ssl.SSLException;
 
 public class ClientHandler extends Thread {
 
@@ -88,30 +92,42 @@ public class ClientHandler extends Thread {
 			case "upload":
 				Utilitaire.receiveFile(in, path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName());
 				out.writeUTF("\tFichier recu!");
-				// else
-				// out.writeUTF("\tErreur");
 				break;
 			case "download":
-				String fileName = path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName();
-				if ( !new File(fileName).isFile()) {
+				if (tabString.length != 3) {
+					String fileName = path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName();
+					if (!new File(fileName).isFile()) {
+						out.writeBoolean(false);
+						throw new FileNotFoundException("File not found");
+					} else
+						out.writeBoolean(true);
+					if (tabString.length == 3) {
+						{
+							fileToZip(fileName);
+							Utilitaire.sendFile(out, fileName.concat(".zip")); // TODO: arrive pas envoye le zip
+							new File(fileName + ".zip").delete();
+						}
+					} else {
+						Utilitaire.sendFile(out, fileName);
+					}
+					out.writeUTF(tabString.length == 3 ? "\tZip file sent" : "\tFile sent");
+				} else {
 					out.writeBoolean(false);
-					throw new FileNotFoundException("File not found");
-				} else
-				out.writeBoolean(true);
-				Utilitaire.sendFile(out, fileName);
-				out.writeUTF("\tFichier envoyÃ©");
-				// else
-				// out.writeUTF("\tErreur");
+					throw new UnsupportedOperationException("Operation non supporté pour le moment");
+				}
 				break;
 			}
 		} catch (NullPointerException e) {
 
+		} catch (UnsupportedOperationException e) {
+			out.writeUTF("\t" + e.getMessage());
 		} catch (FileNotFoundException e) {
 			out.writeUTF("\tError the file or the directory " + tabString[Utilitaire.getPosFile()] + " "
 					+ "does not exist : " + e.getMessage());
+		} catch (SecurityException e) {
+			socket.close();
 		} catch (IOException e) {
-			out.writeUTF("\t");
-
+			socket.close();
 		}
 
 	}
@@ -197,12 +213,28 @@ public class ClientHandler extends Thread {
 	/**
 	 * 
 	 */
+	private void fileToZip(String fileName) throws IOException {
+
+		File file = new File(fileName);
+		ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(fileName + ".zip"));
+		zos.putNextEntry(new ZipEntry(file.getName()));
+
+		byte[] bytesToRead = Files.readAllBytes(file.toPath());
+		zos.write(bytesToRead, 0, bytesToRead.length);
+		zos.closeEntry();
+		zos.close();
+
+	}
+
+	/**
+	 * 
+	 */
 	private void parent_directory() throws IOException {
 		if (!this.path.equals(Server.getRootPath_jar())) {
-			path= new File(path).getParentFile().getAbsolutePath();
+			path = new File(path).getParentFile().getAbsolutePath();
 			out.writeUTF("\tparent directory...");
 		} else {
-			out.writeUTF("\tYou can't go back to a parent directory"); 
+			out.writeUTF("\tYou can't go back to a parent directory");
 
 		}
 

@@ -29,7 +29,7 @@ public final class Utilitaire {
 	 * @param fileName
 	 * @throws IOException
 	 */
-	public static void receiveFile(DataInputStream in, String fileName) throws IOException {
+	public static void receiveFile(DataInputStream in, String fileName) throws SecurityException,IOException {
 		// String name = new File(fileName).getName();
 
 		boolean received = false;
@@ -50,15 +50,6 @@ public final class Utilitaire {
 		fileOut.close();
 		received = true;
 
-		/**
-		 * } catch (FileNotFoundException e) { System.out.println(e.getMessage()); }
-		 * catch (SecurityException e) { System.out.println(e.getMessage()); } catch
-		 * (IOException e) { System.out.println(e.getMessage()); } finally { try {
-		 * fileOut.close(); } catch (NullPointerException e) { } }
-		 * 
-		 */
-		// return received;
-
 	}
 
 	/**
@@ -66,7 +57,7 @@ public final class Utilitaire {
 	 * @param file
 	 * @throws IOException
 	 */
-	public static void sendFile(DataOutputStream out, String file) throws IOException {
+	public static void sendFile(DataOutputStream out, String file) throws SecurityException, IOException{
 
 		boolean sent = false;
 		DataInputStream fileIn = null;
@@ -95,16 +86,6 @@ public final class Utilitaire {
 		// close stream
 		fileIn.close();
 		sent = true;
-
-		/**
-		 * } catch (FileNotFoundException e) { System.out.println(e.getMessage()); }
-		 * catch (SecurityException e) { System.out.println(e.getMessage()); } catch
-		 * (IOException e) { System.out.println(e.getMessage()); } finally { try {
-		 * fileIn.close(); } catch (NullPointerException e) { }
-		 * 
-		 * }
-		 */
-		// return sent;
 
 	}
 
@@ -176,22 +157,6 @@ public final class Utilitaire {
 
 		// scannerIn.close();
 		return serverAddress;
-	}
-
-	public static void previous_dir(String path, String regex) {
-
-		for (int i = path.length() - 1; i >= 0; i--) {
-			if (path.substring(i - 1, i).equals(regex)) {
-				path = path.substring(0, i - 1);
-				break;
-			}
-		}
-	}
-
-	public static void readFile() {
-	}
-
-	public static void writeFile() {
 	}
 
 	public static String getCommandError() {
