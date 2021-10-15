@@ -32,7 +32,7 @@ public class Client {
 	private static final long maxDelayReconnection = 1000 * 60 * 2;
 
 	private static Timer timer;
-	private static Timer timerDeconnectio;
+	private static Timer timerDeconnection;
 	
 	public static void main(String arg[]) throws Exception {
 		// serverAddress = Utilitaire.ipAdress_validation();
@@ -72,8 +72,8 @@ public class Client {
 	}
 
 	private static void safeDeconnection() {
-		timerDeconnectio = new Timer(true);
-		timerDeconnectio.scheduleAtFixedRate(new TimerTask() {
+		timerDeconnection = new Timer(true);
+		timerDeconnection.scheduleAtFixedRate(new TimerTask() {
 
 			@Override
 			public void run() {
@@ -93,26 +93,7 @@ public class Client {
 		}, Date.from(Instant.now()), 1000);
 	}
 
-	private static void verfierConnection() {
-		Client.timer = new Timer();
-		Client.timer.schedule(new TimerTask() {
-
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-
-				if (Client.socket.isClosed() || !Client.socket.isConnected()) {
-					// reconnection("Server deconnected");
-
-					
-					timer.cancel();
-				}
-
-			}
-		}, Date.from(Instant.now()), 1000);
-		
-	}
-
+	
 	private static void deconnection() {
 		System.out.println("deconnection...\n");
 		System.out.println("Au revoir");
