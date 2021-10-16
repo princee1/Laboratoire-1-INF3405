@@ -19,10 +19,10 @@ public final class Utilitaire {
 	 */
 	private static final int POS_COMMAND = 0, POS_FILE_DIR = 1, POS_CMD_OPTION = 2;
 
-	private static final String COMMAND_ERROR = "cd .. ";
+	private static final String COMMAND_ERROR = "cd; ..";
 
 	private static final String COMMAND_DL_ZIP = "-z";
-	private static final String COMMAND_REGEX = " ";
+	private static final String COMMAND_REGEX = ";";
 
 	/**
 	 * 
