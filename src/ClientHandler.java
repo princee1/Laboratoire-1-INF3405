@@ -206,13 +206,13 @@ public class ClientHandler extends Thread {
 	 */
 	private void printCommand(String command) {
 		String tabCommand[] = command.split(Utilitaire.getCommandRegex());
-		String commandToShow="";
+		String commandToShow = "";
 		for (int i = 0; i < tabCommand.length; i++) {
-			commandToShow+=tabCommand[i]+" ";
+			commandToShow += tabCommand[i] + " ";
 		}
-		
+
 		System.out.println("\tClient #" + this.clientNumber + "[" + get_Adress_Port() // address et port du client
-				+ "//" + LocalDate.now() + " @ " + LocalTime.now().toString().split("\\.")[0] + "]: " + command);
+				+ "//" + LocalDate.now() + " @ " + LocalTime.now().toString().split("\\.")[0] + "]: " + commandToShow);
 
 	}
 
