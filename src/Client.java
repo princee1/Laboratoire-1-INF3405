@@ -61,8 +61,8 @@ public class Client {
 
 		} catch (Exception e) {
 			// TODO: handle exception
-			System.out.println("Erreur intrétable: " + e.getMessage());
-			System.out.println("\nFermeture brusque");
+			System.out.println("\n\nErreur intrétable: " + e.getMessage());
+			System.out.println("Fermeture brusque...\n");
 
 		} finally {
 			// TODO: deconnecter
@@ -102,6 +102,7 @@ public class Client {
 		System.out.println("deconnection...\n");
 		try {
 			Client.socket.close();
+			System.out.println("Successfully deconnnected");
 		} catch (NullPointerException e) {
 			System.out.println("Already deconnected... : " + e.getMessage());
 		} catch (SocketException e) {
@@ -110,7 +111,8 @@ public class Client {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.out.println(e.getMessage());
-		} finally {
+		}
+		finally {
 			System.out.println("Au revoir");
 			System.exit(0);
 		}
@@ -131,6 +133,7 @@ public class Client {
 		int cpt = 0;
 		int count = stringTokenizer.countTokens();
 
+		
 		String token = "";
 
 		while (stringTokenizer.hasMoreTokens() && cpt < count) {
@@ -139,7 +142,6 @@ public class Client {
 				token += stringTokenizer.nextToken() + Utilitaire.getCommandRegex();
 			else
 				token += stringTokenizer.nextToken().toLowerCase() + Utilitaire.getCommandRegex();
-
 			cpt++;
 		}
 
@@ -302,6 +304,7 @@ public class Client {
 						Utilitaire.receiveFile(in,
 								currDirectory + "\\" + command.split(Utilitaire.getCommandRegex())[1]);
 				}
+				
 				if (quitter)
 					System.out.println(in.readUTF());
 			} catch (SocketException e) {

@@ -66,7 +66,7 @@ public class Server {
 			System.out.println("Try again with another one-> "+e.getMessage());
 			System.exit(0);
 		} catch (BindException e) {
-//TODO: boucle while ?
+             //TODO: boucle while ?
 			System.out.println("Try again later-> "+e.getMessage());
 			System.exit(0);
 		} catch (SocketException e) {
