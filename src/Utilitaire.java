@@ -25,14 +25,16 @@ public final class Utilitaire {
 	private static final String COMMAND_REGEX = ";";
 
 	/**
+	 * Permet de recevoir un fichier envoyé par un client ou le serveur et le creer
+	 * dans le repertoire
 	 * 
-	 * @param fileName
-	 * @throws IOException
+	 * @param fileName Nom du fichier
+	 * @throws IOException       IOException Si un I/O error se passe pendant
+	 *                           l'envoie de la réponse.
+	 * @throws SecurityException Si le fichier ne peut etre creer
 	 */
-	public static void receiveFile(DataInputStream in, String fileName) throws SecurityException,IOException {
-		// String name = new File(fileName).getName();
+	public static void receiveFile(DataInputStream in, String fileName) throws SecurityException, IOException {
 
-		boolean received = false;
 		DataOutputStream fileOut = null;
 		// try {
 		fileOut = new DataOutputStream(new FileOutputStream(fileName));
@@ -48,16 +50,18 @@ public final class Utilitaire {
 			length -= count;
 		}
 		fileOut.close();
-		received = true;
 
 	}
 
 	/**
+	 * Envoie le fichier demander au client ou au serveur
 	 * 
-	 * @param file
-	 * @throws IOException
+	 * @param file Nom du fichier a envoyé
+	 * @throws IOException       Si un I/O error se passe pendant l'envoie de la
+	 *                           réponse.
+	 * @throws SecurityException Si le fichier ne peut etre accédé
 	 */
-	public static void sendFile(DataOutputStream out, String file) throws SecurityException, IOException{
+	public static void sendFile(DataOutputStream out, String file) throws SecurityException, IOException {
 
 		boolean sent = false;
 		DataInputStream fileIn = null;
@@ -90,8 +94,9 @@ public final class Utilitaire {
 	}
 
 	/**
+	 * Boucle pendant que le port entrée est non valide.Permet de validé l'entré du port.
 	 * 
-	 * @return
+	 * @return le port validé
 	 */
 	public static int port_validation() {
 
@@ -111,8 +116,9 @@ public final class Utilitaire {
 	}
 
 	/**
+	 * Boucle pendant que l'adresse IP entrée est non valide.Permet de valider l'entré l'adresse IP
 	 * 
-	 * @return
+	 * @return L'addresse IP validé
 	 */
 	public static String ipAdress_validation() {
 
@@ -159,34 +165,66 @@ public final class Utilitaire {
 		return serverAddress;
 	}
 
+	/**
+	 * 
+	 * @return Une commande qui génère des erreur soit "cd .."
+	 */
 	public static String getCommandError() {
 		return COMMAND_ERROR;
 	}
 
+	/**
+	 * 
+	 * @return L'option zip 
+	 */
 	public static String getCommandDlZip() {
 		return COMMAND_DL_ZIP;
 	}
 
+	/**
+	 * 
+	 * @return La position du fichier dans la command
+	 */
 	public static final int getPosFile() {
 		return POS_FILE_DIR;
 	}
 
+	/**
+	 * 
+	 * @return Le regex qui sépare les valeurs d'une commande
+	 */
 	public static final String getCommandRegex() {
 		return COMMAND_REGEX;
 	}
 
+	/**
+	 * 
+	 * @return La position d'une command
+	 */
 	public static final int getPosCommand() {
 		return POS_COMMAND;
 	}
 
+	/**
+	 * 
+	 * @return La position d'une option d'une command
+	 */
 	public static final int getPosCmdOption() {
 		return POS_CMD_OPTION;
 	}
 
+	/**
+	 * 
+	 * @return download
+	 */
 	public static String getCommandDownload() {
 		return COMMAND_DOWNLOAD;
 	}
 
+	/**
+	 * 
+	 * @return upload
+	 */
 	public static String getCommandUpload() {
 		return COMMAND_UPLOAD;
 	}

@@ -16,14 +16,28 @@ import java.util.zip.ZipOutputStream;
 
 import javax.net.ssl.SSLException;
 
+/**
+ * Classe qui permet de traiter les commandes du client
+ *
+ */
 public class ClientHandler extends Thread {
 
+	/**
+	 * Variable de connexion
+	 */
 	private Socket socket;
 	private int clientNumber;
 	private DataInputStream in;
 	private DataOutputStream out;
+
 	private String path = "";
 
+	/**
+	 * Constructeur du ClientHandler
+	 * 
+	 * @param socket Le socket de communication retourner par le serveur
+	 * @param clientNumber Le numéro d'identification du client
+	 */
 	public ClientHandler(Socket socket, int clientNumber) {
 		try {
 			this.clientNumber = clientNumber;
@@ -43,15 +57,13 @@ public class ClientHandler extends Thread {
 	public void run() {
 
 		try {
-
-			// DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-			// out.writeUTF("Hello from server - you are clients#" + clientNumber);
+			out.writeUTF("Hello from server - you are clients#" + clientNumber);
 
 			while (true) { // condition d'arret
 				out.writeUTF(path.substring(Server.getIndexBegin()));
 				String command = in.readUTF();
 				printCommand(command);
-				gerer_command(command);
+				commandManagement(command);
 
 			} // execution de demande
 
@@ -67,7 +79,14 @@ public class ClientHandler extends Thread {
 		}
 	}
 
-	private void gerer_command(String command) throws IOException {
+	/**
+	 * Traite la commande du client
+	 * 
+	 * @param command La command du client à traiter
+	 * @throws IOException IOException Si un I/O error se passe pendant l'envoie de
+	 *                     la réponse.
+	 */
+	private void commandManagement(String command) throws IOException {
 		String[] tabString = command.split(Utilitaire.getCommandRegex());
 		try {
 			switch (tabString[Utilitaire.getPosCommand()]) {
@@ -133,9 +152,11 @@ public class ClientHandler extends Thread {
 	}
 
 	/**
+	 * Supprime le fichier ou le répertoire
 	 * 
-	 * @param file
-	 * @throws IOException
+	 * @param file Le nom du fichier ou du repertoire
+	 * @throws IOException IOException Si un I/O error se passe pendant l'envoie de
+	 *                     la réponse.
 	 */
 	private void deleteFile(String file) throws IOException {
 
@@ -157,20 +178,22 @@ public class ClientHandler extends Thread {
 	}
 
 	/**
+	 * Se déplace au répertoire auquel le client voudrait se mettre
 	 * 
-	 * @param file
-	 * @throws IOException
+	 * @param directory Le nom du répertoire
+	 * @throws IOException IOException Si un I/O error se passe pendant l'envoie de
+	 *                     la réponse.
 	 */
-	private void changeDirectory(String file) throws IOException {
+	private void changeDirectory(String directory) throws IOException {
 
-		if (new File(path).getName().equals(file)) {
+		if (new File(path).getName().equals(directory)) {
 			out.writeUTF("\tYou are already in this directory");
 		} else {
-			if (new File(path + "\\" + file).isDirectory()) {
-				path += "\\" + file;
-				out.writeUTF("\tYou are now in the directory " + file);
+			if (new File(path + "\\" + directory).isDirectory()) {
+				path += "\\" + directory;
+				out.writeUTF("\tYou are now in the directory " + directory);
 			} else {
-				out.writeUTF("\t" + file + " is not a folder");
+				out.writeUTF("\t" + directory + " is not a folder");
 			}
 
 		}
@@ -178,19 +201,22 @@ public class ClientHandler extends Thread {
 	}
 
 	/**
+	 * Creer un ou plusieurs fichier dans le répertoire où se trouve le client
+	 * actuellement.
 	 * 
-	 * @param file
-	 * @throws IOException
+	 * @param directory Le nom du répertoire
+	 * @throws IOException IOException Si un I/O error se passe pendant l'envoie de
+	 *                     la réponse.
 	 */
-	private void create_folder(String file) throws IOException {
-		File directory = new File(path + "\\" + file);
+	private void create_folder(String directory) throws IOException {
+		File dir = new File(path + "\\" + directory);
 		// TODO verifier si c un folder
 
 		// if (directory.isDirectory()) {
-		if (directory.mkdirs()) {
-			out.writeUTF("\t" + file + " is created!");
+		if (dir.mkdirs()) {
+			out.writeUTF("\t" + directory + " is created!");
 		} else {
-			out.writeUTF("\tCouldnt create: " + file + " Try again");
+			out.writeUTF("\tCouldnt create: " + directory + " Try again");
 
 		}
 		// } else {
@@ -217,7 +243,11 @@ public class ClientHandler extends Thread {
 	}
 
 	/**
+	 * Permet de compresser le fichier en format zip
 	 * 
+	 * @param fileName Le nom du fichier
+	 * @throws IOException IOException Si un I/O error se passe pendant la creation
+	 *                     du dossier compresser
 	 */
 	private void fileToZip(String fileName) throws IOException {
 
@@ -233,7 +263,11 @@ public class ClientHandler extends Thread {
 	}
 
 	/**
+	 * Permet de se déplacer dans le repertoire parent du répertoire où se situe
+	 * actuellement le client
 	 * 
+	 * @throws IOException IOException Si un I/O error se passe pendant l'envoie de
+	 *                     la réponse.
 	 */
 	private void parent_directory() throws IOException {
 		if (!this.path.equals(Server.getRootPath_jar())) {
@@ -247,8 +281,10 @@ public class ClientHandler extends Thread {
 	}
 
 	/**
+	 * Liste tous les dossiers et fichiers dans le répertoire où se situe
+	 * actuellement le client
 	 * 
-	 * @throws IOException
+	 * @throws IOException Si un I/O error se passe pendant l'envoie de la réponse.
 	 */
 	private void displayFiles() throws IOException {
 
@@ -268,8 +304,10 @@ public class ClientHandler extends Thread {
 	}
 
 	/**
+	 * Retourne l'addresse et le port du socket
 	 * 
-	 * @return
+	 * @return [Adresse IP client : Port client // Date et Heure (min, sec)] :
+	 *         "Commande"
 	 */
 	private String get_Adress_Port() {
 
@@ -278,7 +316,7 @@ public class ClientHandler extends Thread {
 
 	/**
 	 * 
-	 * @return
+	 * @return Le socket
 	 */
 	public Socket getSocket() {
 		return socket;

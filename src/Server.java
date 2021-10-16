@@ -41,6 +41,9 @@ public class Server {
 
 	}
 
+	/**
+	 * Permet de créer un Serveur socket 
+	 */
 	private static void connection() {
 		int serverPort;
 		String serverAddress;
@@ -78,10 +81,17 @@ public class Server {
 		}
 	}
 
+	/**
+	 * 
+	 * @return Retourne a partir de où on ne peut pas reculer dans le path
+	 */
 	public static int getIndexBegin() {
 		return INDEX_BEGIN;
 	}
-
+/**
+ * 
+ * @return Retourne le répertoire ou se trouve le jar
+ */
 	public static final String getRootPath_jar() {
 		return ROOTPATH_JAR;
 	}

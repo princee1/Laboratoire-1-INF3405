@@ -10,6 +10,7 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.file.FileAlreadyExistsException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
@@ -24,48 +25,48 @@ public class Client {
 	private static Socket socket;
 	private static DataOutputStream out;
 	private static DataInputStream in;
-	private static String dossierTemp = "Rï¿½pertoire actuelle: ";
-	private static String currDirectory = System.getProperty("user.dir");
-
 	private static int port;
 	private static String serverAddress;
 
+	private static String dossierTemp = "Répertoire actuelle: ";
+	private static String currDirectory = System.getProperty("user.dir");
+
+	/**
+	 * Variable pour gérer les erreur au cours de l'exécution du programme
+	 */
 	private static boolean quitter = true, erreur, connected;
 	private static Thread mainThread;
 	private static final long period = 3000;
 	private static final long maxDelayReconnection = 1000 * 60 * 2;
-
 	private static Timer timerDeconnection;
 
 	public static void main(String arg[]) throws Exception {
 		// serverAddress = Utilitaire.ipAdress_validation();
 		// port = Utilitaire.port_validation();
-
 		serverAddress = "127.0.0.1";
 		port = 5000;
 		mainThread = Thread.currentThread();
-		// socket = new Socket();
-		// safeDeconnection();
 
+		// safeDeconnection();
 		connection();
-		// verfierConnection();
 
 		try {
 
+			System.out.println(in.readUTF() + "\n");
 			do {
-				verifier_enoie_Command();
+				verify_SendCommand();
 			} while (quitter);
 
 		} catch (NullPointerException e) {
-			// si le socket n'est pas connectï¿½
+			// si le socket n'est pas connecté alors il est = null
 
+		} catch (IOException e) {
+			System.out.println("Erreur de reception/envoie de données: " + e.getMessage() + "\n");
 		} catch (Exception e) {
-			// TODO: handle exception
 			System.out.println("\n\nErreur intrétable: " + e.getMessage());
 			System.out.println("Fermeture brusque...\n");
-
 		} finally {
-			// TODO: deconnecter
+			// deconnection
 			deconnection();
 		}
 	}
@@ -96,7 +97,8 @@ public class Client {
 	}
 
 	/**
-	 * 
+	 * Permet de se déconnecter dans le cas où le client a été connecté auparavant
+	 * et termine ensuite l'exécution du programme
 	 */
 	private static void deconnection() {
 		System.out.println("deconnection...\n");
@@ -111,8 +113,7 @@ public class Client {
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.out.println(e.getMessage());
-		}
-		finally {
+		} finally {
 			System.out.println("Au revoir");
 			System.exit(0);
 		}
@@ -120,46 +121,75 @@ public class Client {
 	}
 
 	/**
-	 * Transforme l'entrée du client en une commande que le serveur peut traiter.
+	 * Transforme l'entrée du client en mot et concatène le tout en une commande que
+	 * le serveur peut traiter.
 	 * 
-	 * @return une commande.
+	 * @return La commande traitable.
 	 */
 	private static String clientEntry_toCommand() {
 		// System.out.print("Repertoire actuelle : "); // TODO affichier le rï¿½pertoire
 		// actuelle
 		String command = new Scanner(System.in).nextLine().strip();
 
+		ArrayList<String> temp = new ArrayList<>();
+
 		StringTokenizer stringTokenizer = new StringTokenizer(command, " ", false);
 		int cpt = 0;
 		int count = stringTokenizer.countTokens();
 
-		
 		String token = "";
 
-		while (stringTokenizer.hasMoreTokens() && cpt < count) {
+		while (stringTokenizer.hasMoreTokens()) {
 			// TODO Rendre la command et la cmd option lowerCase seulement !
-			if (cpt == Utilitaire.getPosFile())
-				token += stringTokenizer.nextToken() + Utilitaire.getCommandRegex();
-			else
-				token += stringTokenizer.nextToken().toLowerCase() + Utilitaire.getCommandRegex();
-			cpt++;
+			// String tempToken = stringTokenizer.nextToken();
+			/**
+			 * if (cpt == 0) {token += tempToken.toLowerCase() +
+			 * Utilitaire.getCommandRegex(); }else if(!tempToken.equals("-z")) {
+			 * token+=tempToken+" "; }else if(tempToken.equals("-z") && cpt==count) {
+			 * token+=Utilitaire.getCommandRegex()+tempToken; }
+			 * 
+			 */
+			/**
+			 * if (cpt == Utilitaire.getPosFile()) token += stringTokenizer.nextToken() +
+			 * Utilitaire.getCommandRegex(); else token +=
+			 * stringTokenizer.nextToken().toLowerCase() + Utilitaire.getCommandRegex();
+			 */
+
+			temp.add(stringTokenizer.nextToken());
 		}
 
+		token += temp.get(0).toLowerCase() + Utilitaire.getCommandRegex();
+		if (count != 1) {
+			String file = "";
+
+			for (int i = 1; i < temp.size() - 1; i++) {
+				file += temp.get(i) + " ";
+			}
+			// token += file.trim() + Utilitaire.getCommandRegex();
+
+			if (temp.get(count - 1).equals(Utilitaire.getCommandDlZip())) {
+				token += file.trim();
+				token += Utilitaire.getCommandRegex() + temp.get(count - 1).toLowerCase();
+			} else if (!temp.get(count - 1).equals(temp.get(0))) {
+				file += " " + temp.get(count - 1);
+				token += file;
+			}
+		}
 		return token;
 	}
 
 	/**
-	 * Vérifie la commande du client. Dans le cas ou la commande est bonne, elle
-	 * est envoyé au serveur
+	 * Vérifie la commande du client. Dans le cas ou la commande est bonne, elle est
+	 * envoyé au serveur. Sinon un message d'erreur lui est afficher
 	 * 
-	 * @throws IOException
 	 */
-	private static void verifier_enoie_Command() {
+	private static void verify_SendCommand() {
 		do {
 			printCurrentDirectory();
 			erreur = false;
+			String command = "";
 			try {
-				String command = clientEntry_toCommand();
+				command = clientEntry_toCommand();
 				if (command.equals(Utilitaire.getCommandError()))
 					throw new CmdException("cd..");
 
@@ -219,7 +249,7 @@ public class Client {
 					break;
 				}
 
-				envoieCommand(command);
+				sendCommand(command);
 
 			} catch (ArrayIndexOutOfBoundsException e) {
 				System.out.println("\tErreur rien d'entrer: " + e.getMessage());
@@ -231,10 +261,10 @@ public class Client {
 				connected = false;
 				System.out.println("\t" + e.getMessage());
 			} catch (SocketException e) {
-				// TODO reset connection
-				// System.out.println("\t" + e.getMessage());
 				connected = false;
-				reconnection(e.getMessage());
+				if (!command.equals("-q;")) {
+					reconnection(e.getMessage());
+				}
 			} catch (FileNotFoundException e) {
 				System.out.println("\t" + e.getMessage());
 				erreur = true;
@@ -243,7 +273,7 @@ public class Client {
 				erreur = true;
 			} catch (SecurityException e) {
 				System.out.println("\tErreur: " + e.getMessage());
-				 erreur=true;
+				erreur = true;
 			} catch (IOException e) {
 				System.out.println("\tErreur: " + e.getMessage());
 				erreur = false;
@@ -253,9 +283,12 @@ public class Client {
 	}
 
 	/**
-	 * Permet de se reconnecter apres une erreur de connection au server
+	 * Permet de se reconnecter apres une erreur de connection au server(connection
+	 * closed/reset) lorsqu'il envoie la commande. Stop le mainThread et tente de se
+	 * connecter a chaque periode. Ferme l'execution du programme apres un delay
+	 * dépassé
 	 * 
-	 * @param errorMessage: Message d'erreur de l'exception
+	 * @param errorMessage Message d'erreur de l'exception
 	 */
 	private static void reconnection(String errorMessage) {
 		System.out.println("\tErreur de connection: " + errorMessage);
@@ -287,11 +320,13 @@ public class Client {
 	}
 
 	/**
+	 * Envoie la command entrée au serveur. Et recois ensuite la reponse du serveur
 	 * 
-	 * @param command
-	 * @throws IOException
+	 * @param command La command du client
+	 * @throws IOException Si la connection a été reset ou closed pendant l'envoie
+	 *                     de la command
 	 */
-	private static void envoieCommand(String command) throws IOException {
+	private static void sendCommand(String command) throws IOException {
 		if (!erreur) {
 
 			out.writeUTF(command); // envoie de commande
@@ -304,14 +339,14 @@ public class Client {
 						Utilitaire.receiveFile(in,
 								currDirectory + "\\" + command.split(Utilitaire.getCommandRegex())[1]);
 				}
-				
+
 				if (quitter)
 					System.out.println(in.readUTF());
 			} catch (SocketException e) {
 				// TODO: handle exception
 				System.out.println(e.getMessage());
 				deconnection();// TODO: déconnecter ou quitter la boucle
-			}catch(SecurityException e) {
+			} catch (SecurityException e) {
 				deconnection();// TODO: déconnecter ou quitter la boucle
 			}
 
@@ -319,7 +354,7 @@ public class Client {
 	}
 
 	/**
-	 * Affiche le rï¿½pertoire oï¿½ se situe le client dans le serveur
+	 * Affiche le répertoire où se situe le client dans le serveur
 	 */
 	private static void printCurrentDirectory() {
 		try {
@@ -327,12 +362,10 @@ public class Client {
 				dossierTemp = in.readUTF();
 			}
 			System.out.print(dossierTemp + "> ");
-		} catch (SocketException e) {
-
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.out.println("Erreur reception du dossier");
-			// TODO quitter ou une reconnextion
+			deconnection();
 		}
 	}
 
