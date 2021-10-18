@@ -168,11 +168,11 @@ public class Client {
 			// token += file.trim() + Utilitaire.getCommandRegex();
 
 			if (temp.get(count - 1).equals(Utilitaire.getCommandDlZip())) {
-				token += file.trim();
+				token += file.strip();
 				token += Utilitaire.getCommandRegex() + temp.get(count - 1).toLowerCase();
 			} else if (!temp.get(count - 1).equals(temp.get(0))) {
 				file += " " + temp.get(count - 1);
-				token += file;
+				token += file.strip();
 			}
 		}
 		return token;
@@ -193,7 +193,9 @@ public class Client {
 				if (command.equals(Utilitaire.getCommandError()))
 					throw new CmdException("cd..");
 
+				//System.out.println(command);
 				String tab[] = command.split(Utilitaire.getCommandRegex());
+			
 
 				switch (tab[Utilitaire.getPosCommand()]) {
 
