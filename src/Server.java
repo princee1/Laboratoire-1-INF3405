@@ -51,11 +51,11 @@ public class Server {
 		int serverPort;
 		String serverAddress;
 
-		// serverAddress = Utilitaire.ipAdress_validation();
-		 //serverPort = Utilitaire.port_validation();
+		serverAddress = Utilitaire.ipAdress_validation();
+		 serverPort = Utilitaire.port_validation();
 
-		serverAddress = "127.0.0.1";
-		serverPort = 5000;
+		//serverAddress = "127.0.0.1";
+		//serverPort = 5000;
 
 		try {
 			listener = new ServerSocket();

@@ -34,24 +34,21 @@ public class Client {
 	/**
 	 * Variable pour gérer les erreur au cours de l'exécution du programme
 	 */
-	private static boolean quitter = true, erreur, connected, reconnection = false;
+	private static boolean quitter = true, erreur, connected, reconnected = false;
 	private static Thread mainThread;
 	private static final long period = 3000;
 	private static final long maxDelayReconnection = 1000 * 60 * 2;
 	private static Timer timerDeconnection;
 
 	public static void main(String arg[]) throws Exception {
-		// serverAddress = Utilitaire.ipAdress_validation();
-		// port = Utilitaire.port_validation();
-
-		serverAddress = "127.0.0.1";
-		port = 5000;
+		 serverAddress = Utilitaire.ipAdress_validation();
+		 port = Utilitaire.port_validation();
 
 		mainThread = Thread.currentThread();
 		try {
 			// safeDeconnection();
 			connection();
-			
+
 			do {
 				verify_SendCommand();
 			} while (quitter);
@@ -297,9 +294,9 @@ public class Client {
 				System.out.println("Retrying a new connection with the server");
 				connection();
 				if (Client.connected) {
-					Client.mainThread.resume();
-					Client.reconnection = true;
+					Client.reconnected = true;
 					Client.printCurrentDirectory();// TODO pourquoi reappler la methode?
+					Client.mainThread.resume();
 					timer.cancel();
 				} else if ((Date.from(Instant.now()).getTime()
 						- startReconnection.getTime()) >= Client.maxDelayReconnection) {
@@ -360,9 +357,12 @@ public class Client {
 			System.out.print(dossierTemp + "> ");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			if (!reconnected) {
 				System.out.println("Erreur reception du dossier: " + e.getMessage());
 				deconnection();
-			
+			} else {
+				Client.reconnected = false;
+			}
 		}
 	}
 
@@ -379,7 +379,7 @@ public class Client {
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
 			connected = true;
-			 System.out.println(in.readUTF() + "\n");
+			System.out.println(in.readUTF() + "\n");
 		} catch (ConnectException e) {
 			// TODO: handle exception
 			connected = false;
