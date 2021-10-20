@@ -34,7 +34,7 @@ public class Client {
 	/**
 	 * Variable pour gérer les erreur au cours de l'exécution du programme
 	 */
-	private static boolean quitter = true, erreur, connected;
+	private static boolean quitter = true, erreur, connected, reconnection = false;
 	private static Thread mainThread;
 	private static final long period = 3000;
 	private static final long maxDelayReconnection = 1000 * 60 * 2;
@@ -43,16 +43,15 @@ public class Client {
 	public static void main(String arg[]) throws Exception {
 		// serverAddress = Utilitaire.ipAdress_validation();
 		// port = Utilitaire.port_validation();
+
 		serverAddress = "127.0.0.1";
 		port = 5000;
+
 		mainThread = Thread.currentThread();
-
-		// safeDeconnection();
-		connection();
-
 		try {
-
-			System.out.println(in.readUTF() + "\n");
+			// safeDeconnection();
+			connection();
+			
 			do {
 				verify_SendCommand();
 			} while (quitter);
@@ -60,15 +59,15 @@ public class Client {
 		} catch (NullPointerException e) {
 			// si le socket n'est pas connecté alors il est = null
 
-		} catch (IOException e) {
-			System.out.println("Erreur de reception/envoie de données: " + e.getMessage() + "\n");
 		} catch (Exception e) {
+
 			System.out.println("\n\nErreur intrétable: " + e.getMessage());
 			System.out.println("Fermeture brusque...\n");
 		} finally {
 			// deconnection
 			deconnection();
 		}
+
 	}
 
 	/**
@@ -127,8 +126,7 @@ public class Client {
 	 * @return La commande traitable.
 	 */
 	private static String clientEntry_toCommand() {
-		// System.out.print("Repertoire actuelle : "); // TODO affichier le rï¿½pertoire
-		// actuelle
+
 		String command = new Scanner(System.in).nextLine().strip();
 
 		ArrayList<String> temp = new ArrayList<>();
@@ -140,20 +138,6 @@ public class Client {
 		String token = "";
 
 		while (stringTokenizer.hasMoreTokens()) {
-			// TODO Rendre la command et la cmd option lowerCase seulement !
-			// String tempToken = stringTokenizer.nextToken();
-			/**
-			 * if (cpt == 0) {token += tempToken.toLowerCase() +
-			 * Utilitaire.getCommandRegex(); }else if(!tempToken.equals("-z")) {
-			 * token+=tempToken+" "; }else if(tempToken.equals("-z") && cpt==count) {
-			 * token+=Utilitaire.getCommandRegex()+tempToken; }
-			 * 
-			 */
-			/**
-			 * if (cpt == Utilitaire.getPosFile()) token += stringTokenizer.nextToken() +
-			 * Utilitaire.getCommandRegex(); else token +=
-			 * stringTokenizer.nextToken().toLowerCase() + Utilitaire.getCommandRegex();
-			 */
 
 			temp.add(stringTokenizer.nextToken());
 		}
@@ -165,14 +149,17 @@ public class Client {
 			for (int i = 1; i < temp.size() - 1; i++) {
 				file += temp.get(i) + " ";
 			}
-			// token += file.trim() + Utilitaire.getCommandRegex();
+			token += file.strip();
 
 			if (temp.get(count - 1).equals(Utilitaire.getCommandDlZip())) {
-				token += file.strip();
+				// token += file.strip();
 				token += Utilitaire.getCommandRegex() + temp.get(count - 1).toLowerCase();
 			} else if (!temp.get(count - 1).equals(temp.get(0))) {
-				file += " " + temp.get(count - 1);
-				token += file.strip();
+				// file += " " + temp.get(count - 1);
+				if (count == 2)
+					token += temp.get(count - 1);
+				else
+					token += " " + temp.get(count - 1);
 			}
 		}
 		return token;
@@ -193,9 +180,8 @@ public class Client {
 				if (command.equals(Utilitaire.getCommandError()))
 					throw new CmdException("cd..");
 
-				//System.out.println(command);
+				// System.out.println(command);
 				String tab[] = command.split(Utilitaire.getCommandRegex());
-			
 
 				switch (tab[Utilitaire.getPosCommand()]) {
 
@@ -256,6 +242,9 @@ public class Client {
 			} catch (ArrayIndexOutOfBoundsException e) {
 				System.out.println("\tErreur rien d'entrer: " + e.getMessage());
 				erreur = true;
+			} catch (IndexOutOfBoundsException e) {
+				System.out.println("\tErreur rien d'entrer: " + e.getMessage());
+				erreur = true;
 			} catch (CmdException e) {
 				System.out.println(e.getMessage());
 				erreur = true;
@@ -309,6 +298,7 @@ public class Client {
 				connection();
 				if (Client.connected) {
 					Client.mainThread.resume();
+					Client.reconnection = true;
 					Client.printCurrentDirectory();// TODO pourquoi reappler la methode?
 					timer.cancel();
 				} else if ((Date.from(Instant.now()).getTime()
@@ -337,9 +327,13 @@ public class Client {
 				if (command.split(Utilitaire.getCommandRegex())[Utilitaire.getPosCommand()].equals("upload")) {
 					Utilitaire.sendFile(out, command.split(Utilitaire.getCommandRegex())[1]);
 				} else if (command.split(Utilitaire.getCommandRegex())[Utilitaire.getPosCommand()].equals("download")) {
-					if (in.readBoolean())
+					if (in.readBoolean()) {
+						String zip = (command.split(";").length == 3) ? ".zip" : "";
 						Utilitaire.receiveFile(in,
-								currDirectory + "\\" + command.split(Utilitaire.getCommandRegex())[1]);
+								currDirectory + "\\" + command.split(Utilitaire.getCommandRegex())[1] + zip);
+
+					}
+
 				}
 
 				if (quitter)
@@ -366,8 +360,9 @@ public class Client {
 			System.out.print(dossierTemp + "> ");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			System.out.println("Erreur reception du dossier");
-			deconnection();
+				System.out.println("Erreur reception du dossier: " + e.getMessage());
+				deconnection();
+			
 		}
 	}
 
@@ -378,15 +373,13 @@ public class Client {
 
 		try {
 			socket = new Socket(serverAddress, port);
-			// socket.connect(new InetSocketAddress(serverAddress, port), 0);
-			// socket.setReuseAddress(true);
-			// System.out.println(socket);
 			System.out.println("Connection established!\n ");
 
 			System.out.format("The server is running on %s:%d%n", serverAddress, port);
 			out = new DataOutputStream(socket.getOutputStream());
 			in = new DataInputStream(socket.getInputStream());
 			connected = true;
+			 System.out.println(in.readUTF() + "\n");
 		} catch (ConnectException e) {
 			// TODO: handle exception
 			connected = false;

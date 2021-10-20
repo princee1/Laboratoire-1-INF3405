@@ -35,7 +35,7 @@ public class ClientHandler extends Thread {
 	/**
 	 * Constructeur du ClientHandler
 	 * 
-	 * @param socket Le socket de communication retourner par le serveur
+	 * @param socket       Le socket de communication retourner par le serveur
 	 * @param clientNumber Le numéro d'identification du client
 	 */
 	public ClientHandler(Socket socket, int clientNumber) {
@@ -96,7 +96,6 @@ public class ClientHandler extends Thread {
 				create_folder(tabString[Utilitaire.getPosFile()]);
 				break;
 			case "cd":
-				// change la variable path
 				changeDirectory(tabString[Utilitaire.getPosFile()]);
 				break;
 			case "cd..":
@@ -113,27 +112,21 @@ public class ClientHandler extends Thread {
 				out.writeUTF("\tFichier recu!");
 				break;
 			case "download":
-				if (tabString.length != 3) {
-					String fileName = path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName();
-					if (!new File(fileName).isFile()) {
-						out.writeBoolean(false);
-						throw new FileNotFoundException("File not found");
-					} else
-						out.writeBoolean(true);
-					if (tabString.length == 3) {
-						{
-							fileToZip(fileName);
-							Utilitaire.sendFile(out, fileName.concat(".zip")); // TODO: arrive pas envoye le zip
-							new File(fileName + ".zip").delete();
-						}
-					} else {
-						Utilitaire.sendFile(out, fileName);
-					}
-					out.writeUTF(tabString.length == 3 ? "\tZip file sent" : "\tFile sent");
-				} else {
+				String fileName = path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName();
+				if (!new File(fileName).isFile()) {
 					out.writeBoolean(false);
-					throw new UnsupportedOperationException("Operation non supporté pour le moment");
+					throw new FileNotFoundException("File not found");
+				} else
+					out.writeBoolean(true);
+				if (tabString.length == 3) {
+					fileToZip(fileName);
+					Utilitaire.sendFile(out, fileName.concat(".zip")); // TODO: arrive pas envoye le zip
+					new File(fileName + ".zip").delete();
+				} else {
+					Utilitaire.sendFile(out, fileName);
 				}
+				out.writeUTF(tabString.length == 3 ? "\tZip file sent" : "\tFile sent");
+
 				break;
 			}
 		} catch (NullPointerException e) {
@@ -212,16 +205,13 @@ public class ClientHandler extends Thread {
 		File dir = new File(path + "\\" + directory);
 		// TODO verifier si c un folder
 
-		// if (directory.isDirectory()) {
 		if (dir.mkdirs()) {
 			out.writeUTF("\t" + directory + " is created!");
 		} else {
 			out.writeUTF("\tCouldnt create: " + directory + " Try again");
 
 		}
-		// } else {
-		// out.writeUTF(file+" is not a directory");
-		// }
+
 	}
 
 	/**
@@ -297,10 +287,19 @@ public class ClientHandler extends Thread {
 
 		// prints out files
 		for (String file : fileList) {
-			envoie += file + "\n";
-			// System.out.println(file);
+			File listed = new File(this.path + "\\" + file);
+			if (!file.equals("Server.jar")) {
+				if (listed.isDirectory())
+					envoie += "\t[Folder] " + file + "\n";
+				else
+					envoie += "\t[File] " + file + "\n";
+			}
+
 		}
-		out.writeUTF(envoie);
+
+		out.writeUTF(
+				(envoie.equals("")) ? "\tThere's no File or Folder at the moment\n\tUpload a file or Create a directory"
+						: envoie);
 	}
 
 	/**
