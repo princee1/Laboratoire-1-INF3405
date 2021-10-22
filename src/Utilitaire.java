@@ -1,14 +1,13 @@
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Scanner;
 
 public final class Utilitaire {
@@ -16,7 +15,7 @@ public final class Utilitaire {
 	/**
 	 * Commande
 	 */
-	private static final String COMMAND_CD_DOT = "cd..", COMMAND_UPLOAD = "upload", COMMAND_DOWNLOAD = "download";
+	private static final String  COMMAND_UPLOAD = "upload", COMMAND_DOWNLOAD = "download";
 
 	/**
 	 * Position des commandes
@@ -47,10 +46,10 @@ public final class Utilitaire {
 			bytesread += in.read(bytes, bytesread, length - bytesread);
 		}
 		FileOutputStream fos;
-		fos= new FileOutputStream(fileName);
+		fos = new FileOutputStream(fileName);
 		fos.write(bytes);
 		fos.close();
-	
+
 	}
 
 	/**
@@ -63,14 +62,10 @@ public final class Utilitaire {
 	 */
 	public static void sendFile(DataOutputStream out, String file) throws SecurityException, IOException {
 
-		boolean sent = false;
-		BufferedInputStream fileIn = null;
-	
 		byte[] bytes;
 		bytes = Files.readAllBytes(Paths.get(new File(file).getAbsolutePath()));
 		out.writeInt(bytes.length);
 		out.write(bytes, 0, bytes.length);
-
 
 	}
 
@@ -83,15 +78,24 @@ public final class Utilitaire {
 	public static int port_validation() {
 
 		Scanner scannerIn = new Scanner(System.in);
+		boolean erreur;
+		int serverPort = -1;
+		do {
+			System.out.println("Veuillez entrez un Port Ip?");
+			erreur = false;
+			try {
+				serverPort = Integer.parseInt(scannerIn.nextLine().strip());
+				if (serverPort < 5002 || serverPort > 5049) {
+					System.out.println("Port Invalide!Veuillez réessayer\n");
+					erreur = true;
+				}
 
-		int serverPort;
-		System.out.println("Port Ip?");
-		serverPort = scannerIn.nextInt();
-		while (serverPort < 5002 || serverPort > 5049) {
-			System.out.println("Erreur !Port Invalide!");
+			} catch (NumberFormatException e) {
+				System.out.println("Erreur de formattage: "+e.getMessage()+"\n");
+				erreur = true;
+			}
 
-			serverPort = scannerIn.nextInt();
-		}
+		} while (erreur);
 
 		// scannerIn.close();
 		return serverPort;
@@ -114,7 +118,7 @@ public final class Utilitaire {
 
 		do {
 			erreurAddressIp = false;
-			System.out.println("Adresse Ip avec le format 4 octets XXX.XXX.XX.XXX?");
+			System.out.println("Veuillez entrez une Adresse Ip avec le format 4 octets XXX.XXX.XXX.XXX");
 
 			serverAddress = scannerIn.nextLine();
 			tabString = serverAddress.trim().split("\\.");
@@ -134,7 +138,6 @@ public final class Utilitaire {
 
 					System.out.println("Addresse ip doit contenir que des chiffres: " + e.getMessage());
 					erreurAddressIp = true;
-
 				}
 			} else {
 
@@ -148,6 +151,15 @@ public final class Utilitaire {
 		return serverAddress;
 	}
 
+	
+	
+	public static void startMessage(String directory) {
+		System.out.println("Bonjour/Hi " + System.getProperty("user.name").toUpperCase() + " "
+				+ Date.from(Instant.now()) + "\nOS: " + System.getProperty("os.name") + "\nOS Version: "
+				+ System.getProperty("os.version") + "\nCurrent Directory: " + directory + "\n");
+
+	}
+	
 	/**
 	 * 
 	 * @return Une commande qui génère des erreur soit "cd .."

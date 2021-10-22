@@ -36,17 +36,16 @@ public class Client {
 	 */
 	private static boolean quitter = true, erreur, connected, reconnected = false;
 	private static Thread mainThread;
-	private static final long period = 3000;
-	private static final long maxDelayReconnection = 1000 * 60 * 2;
-	private static Timer timerDeconnection;
+	private static final long period = 1000;
+	private static final long maxDelayReconnection = 1000 * 60 *1 ;
 
 	public static void main(String arg[]) throws Exception {
-		 serverAddress = Utilitaire.ipAdress_validation();
-		 port = Utilitaire.port_validation();
 
-		mainThread = Thread.currentThread();
 		try {
-			// safeDeconnection();
+			Utilitaire.startMessage(currDirectory);
+			serverAddress = Utilitaire.ipAdress_validation();
+			port = Utilitaire.port_validation();
+			mainThread = Thread.currentThread();
 			connection();
 
 			do {
@@ -68,49 +67,22 @@ public class Client {
 	}
 
 	/**
-	 * 
-	 */
-	private static void safeDeconnection() {
-		timerDeconnection = new Timer(true);
-		timerDeconnection.scheduleAtFixedRate(new TimerTask() {
-
-			@Override
-			public void run() {
-				// TODO Auto-generated method stub
-
-				if (!mainThread.isAlive()) {
-					try {
-						Client.socket.close();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-
-					}
-
-				}
-
-			}
-		}, Date.from(Instant.now()), 1000);
-	}
-
-	/**
 	 * Permet de se déconnecter dans le cas où le client a été connecté auparavant
 	 * et termine ensuite l'exécution du programme
 	 */
 	private static void deconnection() {
-		System.out.println("deconnection...\n");
+		System.out.println(connected ? "deconnection...\n" : "");
 		try {
 			Client.socket.close();
-			System.out.println("Successfully deconnnected");
+			System.out.println("Socket Successfully closed");
 		} catch (NullPointerException e) {
-			System.out.println("Already deconnected... : " + e.getMessage());
+			System.out.println("Already deconnected and closed... : " + e.getMessage());
 		} catch (SocketException e) {
-			// TODO: handle exception
 			System.out.println("Couldnt close the socket " + e.getMessage());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			System.out.println(e.getMessage());
 		} finally {
-			System.out.println("Au revoir");
+			System.out.println("Bye/Au revoir");
 			System.exit(0);
 		}
 
@@ -177,9 +149,7 @@ public class Client {
 				if (command.equals(Utilitaire.getCommandError()))
 					throw new CmdException("cd..");
 
-				// System.out.println(command);
 				String tab[] = command.split(Utilitaire.getCommandRegex());
-
 				switch (tab[Utilitaire.getPosCommand()]) {
 
 				case "cd":
@@ -197,7 +167,7 @@ public class Client {
 					break;
 				case "download":
 					if (tab.length == 2 || tab.length == 3) {
-						if (new File(currDirectory + "\\" + tab[Utilitaire.getPosFile()]).exists()) {
+						if (new File(currDirectory + File.separator + tab[Utilitaire.getPosFile()]).exists()) {
 							throw new FileAlreadyExistsException(tab[Utilitaire.getPosFile()],
 									tab[Utilitaire.getPosFile()],
 									"The file entered already exist in the current directory\n\tThe file would've been overwritten...");
@@ -251,7 +221,8 @@ public class Client {
 			} catch (SocketException e) {
 				connected = false;
 				if (!command.equals("-q;")) {
-					reconnection(e.getMessage());
+					// reconnection(e.getMessage());
+					reconnectionSameThread(e.getMessage());
 				}
 			} catch (FileNotFoundException e) {
 				System.out.println("\t" + e.getMessage());
@@ -278,31 +249,61 @@ public class Client {
 	 * 
 	 * @param errorMessage Message d'erreur de l'exception
 	 */
+	private static void reconnectionSameThread(String errorMessage) {
+
+		long startTime = System.currentTimeMillis();
+		long currentTime = startTime;
+		System.out.println("\tErreur de connection: " + errorMessage);
+		System.out.println("\tReseting connection...\n");
+
+		while (!Client.connected) {
+			if (System.currentTimeMillis() - currentTime >= Client.period) {
+				currentTime = System.currentTimeMillis();
+				System.out.println("Retrying a new connection with the server");
+				connection();
+
+			}
+			if (!Client.connected&& System.currentTimeMillis() - startTime >= (Client.maxDelayReconnection)) {
+				System.out.println("\nCouldn't establish a connection with the server\nTry again later");
+				deconnection();
+			}
+		}
+
+	}
+
+	/**
+	 * Permet de se reconnecter apres une erreur de connection au server(connection
+	 * closed/reset) lorsqu'il envoie la commande. Stop le mainThread et tente de se
+	 * connecter a chaque periode. Ferme l'execution du programme apres un delay
+	 * dépassé
+	 * 
+	 * @param errorMessage Message d'erreur de l'exception
+	 * @deprecated Sujet de beaucoup d'erreur de Thread
+	 */
 	private static void reconnection(String errorMessage) {
 		System.out.println("\tErreur de connection: " + errorMessage);
 		System.out.println("\tReseting connection...\n");
 
 		Date startReconnection = Date.from(Instant.now());
 		Timer timer = new Timer();
-
 		timer.scheduleAtFixedRate(new TimerTask() {
 
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
+
 				Client.mainThread.suspend();
 				System.out.println("Retrying a new connection with the server");
 				connection();
 				if (Client.connected) {
 					Client.reconnected = true;
-					Client.printCurrentDirectory();// TODO pourquoi reappler la methode?
 					Client.mainThread.resume();
+					Client.printCurrentDirectory();
 					timer.cancel();
 				} else if ((Date.from(Instant.now()).getTime()
 						- startReconnection.getTime()) >= Client.maxDelayReconnection) {
 					System.out.println("Couldnt establish a connection");
 					deconnection();
-					// System.exit(0);// TODO trouver une autre facon de quitter
+
 				}
 			}
 		}, Date.from(Instant.now()), Client.period);
@@ -315,7 +316,7 @@ public class Client {
 	 * @throws IOException Si la connection a été reset ou closed pendant l'envoie
 	 *                     de la command
 	 */
-	private static void sendCommand(String command) throws IOException {
+	private static void sendCommand(String command) throws SocketException, IOException {
 		if (!erreur) {
 
 			out.writeUTF(command); // envoie de commande
@@ -327,7 +328,7 @@ public class Client {
 					if (in.readBoolean()) {
 						String zip = (command.split(";").length == 3) ? ".zip" : "";
 						Utilitaire.receiveFile(in,
-								currDirectory + "\\" + command.split(Utilitaire.getCommandRegex())[1] + zip);
+								currDirectory + File.separator + command.split(Utilitaire.getCommandRegex())[1] + zip);
 
 					}
 
@@ -340,6 +341,7 @@ public class Client {
 				System.out.println(e.getMessage());
 				deconnection();// TODO: déconnecter ou quitter la boucle
 			} catch (SecurityException e) {
+				System.out.println(e.getMessage());
 				deconnection();// TODO: déconnecter ou quitter la boucle
 			}
 

@@ -1,20 +1,16 @@
-import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.net.ssl.SSLException;
 
 /**
  * Classe qui permet de traiter les commandes du client
@@ -108,11 +104,11 @@ public class ClientHandler extends Thread {
 				displayFiles();
 				break;
 			case "upload":
-				Utilitaire.receiveFile(in, path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName());
+				Utilitaire.receiveFile(in, path + File.separator + new File(tabString[Utilitaire.getPosFile()]).getName());
 				out.writeUTF("\tFichier recu!");
 				break;
 			case "download":
-				String fileName = path + "\\" + new File(tabString[Utilitaire.getPosFile()]).getName();
+				String fileName = path + File.separator + new File(tabString[Utilitaire.getPosFile()]).getName();
 				if (!new File(fileName).isFile()) {
 					out.writeBoolean(false);
 					throw new FileNotFoundException("File not found");
@@ -153,7 +149,7 @@ public class ClientHandler extends Thread {
 	 */
 	private void deleteFile(String file) throws IOException {
 
-		File fileDelete = new File(path + "\\" + file);
+		File fileDelete = new File(path + File.separator + file);
 		if (fileDelete.isDirectory()) {
 			if (fileDelete.delete()) {
 				out.writeUTF("\tThe folder " + file + " and all the associated has been deleted");
@@ -182,8 +178,8 @@ public class ClientHandler extends Thread {
 		if (new File(path).getName().equals(directory)) {
 			out.writeUTF("\tYou are already in this directory");
 		} else {
-			if (new File(path + "\\" + directory).isDirectory()) {
-				path += "\\" + directory;
+			if (new File(path + File.separator + directory).isDirectory()) {
+				path += File.separator + directory;
 				out.writeUTF("\tYou are now in the directory " + directory);
 			} else {
 				out.writeUTF("\t" + directory + " is not a folder");
@@ -202,7 +198,7 @@ public class ClientHandler extends Thread {
 	 *                     la réponse.
 	 */
 	private void create_folder(String directory) throws IOException {
-		File dir = new File(path + "\\" + directory);
+		File dir = new File(path + File.separator + directory);
 		// TODO verifier si c un folder
 
 		if (dir.mkdirs()) {
@@ -287,7 +283,7 @@ public class ClientHandler extends Thread {
 
 		// prints out files
 		for (String file : fileList) {
-			File listed = new File(this.path + "\\" + file);
+			File listed = new File(this.path + File.separator + file);
 			if (!file.equals("Server.jar")) {
 				if (listed.isDirectory())
 					envoie += "\t[Folder] " + file + "\n";
